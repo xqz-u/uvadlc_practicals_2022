@@ -17,25 +17,43 @@
 This module implements utility functions for downloading and reading CIFAR10 data.
 You don't need to change anything here.
 """
-import torch
 import numpy as np
+import torch
+from torch.utils.data import DataLoader, random_split
+from torchvision import transforms
 
 # tools used or loading cifar10 dataset
 from torchvision.datasets import CIFAR10
-from torch.utils.data import DataLoader
-from torch.utils.data import random_split
-from torchvision import transforms
 
-    
+
 def get_dataloader(dataset, batch_size, return_numpy=False):
     collate_fn = numpy_collate_fn if return_numpy else None
-    train_dataloader      = DataLoader(dataset=dataset["train"], batch_size=batch_size, shuffle=True, drop_last=True,
-                                       collate_fn=collate_fn)
-    validation_dataloader = DataLoader(dataset=dataset["validation"], batch_size=batch_size, shuffle=False, drop_last=False,
-                                       collate_fn=collate_fn)
-    test_dataloader       = DataLoader(dataset=dataset["test"], batch_size=batch_size, shuffle=False, drop_last=False,
-                                       collate_fn=collate_fn)
-    return {"train": train_dataloader, "validation": validation_dataloader, "test": test_dataloader}
+    train_dataloader = DataLoader(
+        dataset=dataset["train"],
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True,
+        collate_fn=collate_fn,
+    )
+    validation_dataloader = DataLoader(
+        dataset=dataset["validation"],
+        batch_size=batch_size,
+        shuffle=False,
+        drop_last=False,
+        collate_fn=collate_fn,
+    )
+    test_dataloader = DataLoader(
+        dataset=dataset["test"],
+        batch_size=batch_size,
+        shuffle=False,
+        drop_last=False,
+        collate_fn=collate_fn,
+    )
+    return {
+        "train": train_dataloader,
+        "validation": validation_dataloader,
+        "test": test_dataloader,
+    }
 
 
 def numpy_collate_fn(batch):
@@ -58,29 +76,41 @@ def read_data_sets(data_dir, validation_size=5000):
     """
 
     mean = (0.491, 0.482, 0.447)
-    std  = (0.247, 0.243, 0.262)
+    std = (0.247, 0.243, 0.262)
 
-    data_transforms = transforms.Compose([
-                            transforms.ToTensor(),
-                            transforms.Normalize(mean, std)
-                        ])
+    data_transforms = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize(mean, std)]
+    )
 
-    train_dataset = CIFAR10(root=data_dir, train=True, download=True, transform=data_transforms)
-    test_dataset = CIFAR10(root=data_dir, train=False, download=True, transform=data_transforms)
-    
+    train_dataset = CIFAR10(
+        root=data_dir, train=True, download=True, transform=data_transforms
+    )
+    test_dataset = CIFAR10(
+        root=data_dir, train=False, download=True, transform=data_transforms
+    )
+
     # Subsample the validation set from the train set
     if not 0 <= validation_size <= len(train_dataset):
-        raise ValueError("Validation size should be between 0 and {0}. Received: {1}.".format(
-            len(train_dataset), validation_size))
-        
-    train_dataset, validation_dataset = random_split(train_dataset, 
-                                                     lengths=[len(train_dataset) - validation_size, validation_size],
-                                                     generator=torch.Generator().manual_seed(42))
+        raise ValueError(
+            "Validation size should be between 0 and {0}. Received: {1}.".format(
+                len(train_dataset), validation_size
+            )
+        )
 
-    return {'train': train_dataset, 'validation': validation_dataset, 'test': test_dataset}
+    train_dataset, validation_dataset = random_split(
+        train_dataset,
+        lengths=[len(train_dataset) - validation_size, validation_size],
+        generator=torch.Generator().manual_seed(42),
+    )
+
+    return {
+        "train": train_dataset,
+        "validation": validation_dataset,
+        "test": test_dataset,
+    }
 
 
-def get_cifar10(data_dir='data/', validation_size=5000):
+def get_cifar10(data_dir="data/", validation_size=5000):
     """
     Prepares CIFAR10 dataset.
     Args:

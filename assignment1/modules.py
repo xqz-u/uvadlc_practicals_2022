@@ -35,7 +35,7 @@ class LinearModule(object):
           input_layer: boolean, True if this is the first layer after the input, else False.
 
         TODO:
-        Initialize weight parameters using Kaiming initialization. 
+        Initialize weight parameters using Kaiming initialization.
         Initialize biases with zeros.
         Hint: the input_layer argument might be needed for the initialization
 
@@ -131,10 +131,10 @@ class ELUModule(object):
 
         TODO:
         Implement forward pass of the module.
-        
+
         Hint: You can store intermediate variables inside the object. They can be used in backward pass computation.
         """
-        
+
         #######################
         # PUT YOUR CODE HERE  #
         #######################

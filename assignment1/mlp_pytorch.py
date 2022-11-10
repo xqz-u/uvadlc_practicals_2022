@@ -17,12 +17,12 @@
 This module implements a multi-layer perceptron (MLP) in PyTorch.
 You should fill in code into indicated sections.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
+from typing import List
+
+import torch
 import torch.nn as nn
-from collections import OrderedDict
 
 
 class MLP(nn.Module):
@@ -32,7 +32,9 @@ class MLP(nn.Module):
     Once initialized an MLP object can perform forward.
     """
 
-    def __init__(self, n_inputs, n_hidden, n_classes, use_batch_norm=False):
+    def __init__(
+        self, n_inputs: int, n_hidden: List[int], n_classes: int, use_batch_norm=False
+    ):
         """
         Initializes MLP object.
 
@@ -49,49 +51,49 @@ class MLP(nn.Module):
                           each Linear and ELU layer.
 
         TODO:
-        Implement module setup of the network.
-        The linear layer have to initialized according to the Kaiming initialization.
-        Add the Batch-Normalization _only_ is use_batch_norm is True.
-        
-        Hint: No softmax layer is needed here. Look at the CrossEntropyLoss module for loss calculation.
-        """
+        Implement module setup of the network. DONE
+        The linear layer have to initialized according to the Kaiming
+        initialization. Add the Batch-Normalization _only_ is use_batch_norm is
+        True. DONE
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-        pass
-        #######################
-        # END OF YOUR CODE    #
-        #######################
-
-    def forward(self, x):
+        Hint: No softmax layer is needed here. Look at the CrossEntropyLoss
+        module for loss calculation.
         """
-        Performs forward pass of the input. Here an input tensor x is transformed through
-        several layer transformations.
+        super().__init__()
+        layers = []
+        in_dim = n_inputs
+        for hidden_dim in n_hidden:
+            layer = nn.Linear(in_dim, hidden_dim, bias=False)
+            # look at source of `nn.init.calculate_gain` to check that
+            # nonlinearity='relu' indeed initializes weights to
+            # N(0, np.sqrt(2/hidden_dim))
+            nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
+            layers.append(layer)
+            layers.append(nn.ELU())
+            if use_batch_norm:
+                layers.append(nn.BatchNorm1d(hidden_dim))
+            in_dim = hidden_dim
+        out_layer = nn.Linear(in_dim, n_classes, bias=False)
+        nn.init.kaiming_normal_(out_layer.weight, nonlinearity="relu")
+        self.layers = nn.Sequential(*layers, out_layer)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Performs forward pass of the input. Here an input tensor x is
+        transformed through several layer transformations.
 
         Args:
           x: input to the network
         Returns:
           out: outputs of the network
-
-        TODO:
-        Implement forward pass of the network.
         """
-
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-
-        #######################
-        # END OF YOUR CODE    #
-        #######################
-
-        return out
+        # flatten the image and its channels but maintain the batch dimension
+        return self.layers(x.view(x.size(0), -1))
 
     @property
     def device(self):
         """
-        Returns the device on which the model is. Can be useful in some situations.
+        Returns the device on which the model is. Can be useful in some
+        situations.
         """
         return next(self.parameters()).device
-    
