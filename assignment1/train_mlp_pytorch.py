@@ -21,7 +21,9 @@ from __future__ import absolute_import, division, print_function
 
 import argparse
 import os
+from collections import OrderedDict
 from copy import deepcopy
+from typing import Dict
 
 import numpy as np
 import torch
@@ -33,29 +35,30 @@ import cifar10_utils
 from mlp_pytorch import MLP
 
 
-def confusion_matrix(predictions, targets):
+def confusion_matrix(predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
     """
-    Computes the confusion matrix, i.e. the number of true positives, false positives, true negatives and false negatives.
+    Computes the confusion matrix, i.e. the number of true positives, false
+    positives, true negatives and false negatives.
 
     Args:
-      predictions: 2D float array of size [batch_size, n_classes], predictions of the model (logits)
+      predictions: 2D float array of size [batch_size, n_classes], predictions
+                   of the model (logits)
       labels: 1D int array of size [batch_size]. Ground truth labels for
               each sample in the batch
     Returns:
-      confusion_matrix: confusion matrix per class, 2D float array of size [n_classes, n_classes]
+      confusion_matrix: confusion matrix per class, 2D float array of size
+                        [n_classes, n_classes]
     """
-
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
-
-    #######################
-    # END OF YOUR CODE    #
-    #######################
+    conf_mat = torch.zeros((predictions.shape[1],) * 2)
+    pred_labels = predictions.argmax(1)
+    for pred, truth in zip(pred_labels, targets):
+        conf_mat[truth, pred] += 1
     return conf_mat
 
 
-def confusion_matrix_to_metrics(confusion_matrix, beta=1.0):
+def confusion_matrix_to_metrics(
+    confusion_matrix: torch.Tensor, beta: float = 1.0, **_
+) -> Dict[str, torch.Tensor]:
     """
     Converts a confusion matrix to accuracy, precision, recall and f1 scores.
     Args:
@@ -66,17 +69,29 @@ def confusion_matrix_to_metrics(confusion_matrix, beta=1.0):
         recall: 1D float array of size [n_classes], the recall for each clas
         f1_beta: 1D float array of size [n_classes], the f1_beta scores for each class
     """
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
+    correct_preds = torch.diag(confusion_matrix)
+    col_sums = confusion_matrix.sum(0)
+    row_sums = confusion_matrix.sum(1)
+    precision = correct_preds / col_sums
+    recall = correct_preds / row_sums
+    beta_squared = beta**2
+    return {
+        "accuracy": correct_preds.sum() / (col_sums + row_sums).sum(),
+        "precision": precision,
+        "recall": recall,
+        "f1_beta": (1 + beta_squared)
+        * precision
+        * recall
+        / (beta_squared * precision + recall),
+    }
 
-    #######################
-    # END OF YOUR CODE    #
-    #######################
-    return metrics
 
-
-def evaluate_model(model, data_loader, num_classes=10):
+def evaluate_model(
+    model: nn.Module,
+    data_loader: torch.utils.data.DataLoader,
+    num_classes=10,
+    **kwargs,
+) -> Dict[str, float]:
     """
     Performs the evaluation of the MLP model on a given dataset.
 
@@ -86,24 +101,23 @@ def evaluate_model(model, data_loader, num_classes=10):
     Returns:
         metrics: A dictionary calculated using the conversion of the confusion matrix to metrics.
 
-    TODO:
-    Implement evaluation of the MLP model on a given dataset.
-
     Hint: make sure to return the average accuracy of the whole dataset,
           independent of batch sizes (not all batches might be the same size).
     """
+    conf_mat = torch.zeros((num_classes,) * 2)
+    model.train(False)
+    with torch.no_grad():
+        for xs, labels in iter(data_loader):
+            xs = np.transpose(xs, (0, 2, 3, 1)).to(kwargs["device"])
+            conf_mat += confusion_matrix(model(xs), labels)
+        conf_mat = confusion_matrix_to_metrics(conf_mat, **kwargs)
+    model.train(True)
+    return conf_mat
 
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
 
-    #######################
-    # END OF YOUR CODE    #
-    #######################
-    return metrics
-
-
-def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
+def train(
+    hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir, **kwargs
+):
     """
     Performs a full training cycle of MLP model.
 
@@ -123,15 +137,6 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
                      performed best on the validation.
       logging_info: An arbitrary object containing logging information. This is for you to
                     decide what to put in here.
-
-    TODO:
-    - Implement the training of the MLP model.
-    - Evaluate your model on the whole validation set each epoch.
-    - After finishing training, evaluate your model that performed best on the validation set,
-      on the whole test dataset.
-    - Integrate _all_ input arguments of this function in your training. You are allowed to add
-      additional input argument if you assign it a default value that represents the plain training
-      (e.g. '..., new_param=False')
 
     Hint: you can save your best model by deepcopy-ing it.
     """
@@ -153,25 +158,53 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     cifar10_loader = cifar10_utils.get_dataloader(
         cifar10, batch_size=batch_size, return_numpy=False
     )
+    n_classes = 10
 
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
+    model_init = lambda: MLP(
+        32 * 32 * 3, hidden_dims, n_classes, use_batch_norm=use_batch_norm
+    )
+    model = model_init().to(device)
+    loss_module = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=lr)
+    evaluation_args = {"num_classes": n_classes, "device": device, **kwargs}
 
-    # TODO: Initialize model and loss module
-    model = ...
-    loss_module = ...
-    # TODO: Training loop including validation
-    # TODO: Do optimization with the simple SGD optimizer
-    val_accuracies = ...
-    # TODO: Test best model
-    test_accuracy = ...
+    running_loss = 0.0
+    best_model_params: OrderedDict = None
+    val_accuracies = []
+    for epoch in range(epochs):
+        for i, (xs, labels) in enumerate(iter(cifar10_loader["train"])):
+            xs = np.transpose(xs, (0, 2, 3, 1)).to(device)
+            # zero the parameter gradients
+            optimizer.zero_grad()
+            # forward + backward + optimize
+            predictions = model(xs)
+            loss = loss_module(predictions, labels)
+            loss.backward()
+            optimizer.step()
+            # print statistics
+            running_loss += loss.item()
+            if i % 50 == 0:  # print every 2000 mini-batches
+                print(f"[{epoch}, {i:5d}] loss: {running_loss / 2000:.3f}")
+                running_loss = 0.0
+
+        val_metrics = evaluate_model(
+            model, cifar10_loader["validation"], **evaluation_args
+        )
+        accuracy = val_metrics["accuracy"]
+        if best_model_params is None or accuracy > val_accuracies[-1]:
+            print(f"Epoch {epoch}, found better params!")
+            best_model_params = model.state_dict()
+        val_accuracies.append(accuracy)
+
+    print(val_accuracies)
+    test_accuracy = evaluate_model(
+        model_init().load_state_dict(best_model_params),
+        # .to(device),
+        cifar10_loader["test"],
+        **evaluation_args,
+    )["accuracy"]
     # TODO: Add any information you might want to save for plotting
     logging_info = ...
-    #######################
-    # END OF YOUR CODE    #
-    #######################
-
     return model, val_accuracies, test_accuracy, logging_info
 
 
@@ -214,3 +247,6 @@ if __name__ == "__main__":
 
     train(**kwargs)
     # Feel free to add any additional functions, such as plotting of the loss curve here
+
+
+model, val_accuracies, test_accuracy, _ = train([128], 0.1, True, 128, 10, 42, "data")

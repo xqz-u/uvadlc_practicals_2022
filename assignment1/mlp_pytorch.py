@@ -67,6 +67,8 @@ class MLP(nn.Module):
             # look at source of `nn.init.calculate_gain` to check that
             # nonlinearity='relu' indeed initializes weights to
             # N(0, np.sqrt(2/hidden_dim))
+            # NOTE
+            # https://uvadlc-notebooks.readthedocs.io/en/latest/tutorial_notebooks/tutorial4/Optimization_and_Initialization.html#How-to-find-appropriate-initialization-values they they use a different gain for the input layer
             nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
             layers.append(layer)
             layers.append(nn.ELU())
@@ -88,7 +90,7 @@ class MLP(nn.Module):
           out: outputs of the network
         """
         # flatten the image and its channels but maintain the batch dimension
-        return self.layers(x.view(x.size(0), -1))
+        return self.layers(x.reshape(x.size(0), -1))
 
     @property
     def device(self):

@@ -50,10 +50,15 @@ show_cifar10_datapoint(xs[i], labs[i])
 mlp = mlp_pytorch.MLP(32 * 32 * 3, [128], 10, use_batch_norm=True)
 # img = xs[0]
 # mlp(img[None, :])
-mlp(xs)
+logits = mlp(xs)
 
 mlp = mlp_pytorch.MLP(32 * 32 * 3, [128], 10)
 mlp(xs)
 
 mlp = mlp_pytorch.MLP(32 * 32 * 3, [], 10)
 mlp(xs)
+
+
+loss = torch.nn.CrossEntropyLoss()
+
+loss(logits, labs)
