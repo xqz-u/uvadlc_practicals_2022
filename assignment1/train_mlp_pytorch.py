@@ -51,14 +51,13 @@ def evaluate_model(
     num_classes=10,
     **kwargs,
 ) -> u.MetricsDict:
-    mode, device = kwargs["mode"], kwargs["device"]
     loss, datapoints = 0.0, 0
-    loss_module = kwargs["loss_module"]
+    mode, loss_module = kwargs["mode"], kwargs["loss_module"]
     conf_mat = torch.zeros((num_classes,) * 2)
     model.eval()
     with torch.no_grad():
         for i, (xs, labels) in enumerate(dataloader):
-            xs = np.transpose(xs, (0, 2, 3, 1)).to(device)
+            xs = np.transpose(xs, (0, 2, 3, 1)).to(model.device)
             predictions = model(xs)
             loss += loss_module(predictions, labels).item() * len(xs)
             conf_mat += confusion_matrix(predictions, labels)
@@ -74,10 +73,10 @@ def train_one_epoch(
     running_loss_period: int = 50,
     **kwargs,
 ) -> u.MetricsDict:
-    loss_module, device = kwargs["loss_module"], kwargs["device"]
+    loss_module = kwargs["loss_module"]
     epoch_loss, running_loss, datapoints = 0.0, 0.0, 0
     for i, (xs, labels) in enumerate(train_dataloader):
-        xs = np.transpose(xs, (0, 2, 3, 1)).to(device)
+        xs = np.transpose(xs, (0, 2, 3, 1)).to(model.device)
         # zero the parameter gradients
         optimizer.zero_grad()
         # forward + backward + optimize
@@ -127,7 +126,6 @@ def train(
 
     evaluation_args = {
         "num_classes": kwargs["num_classes"],
-        "device": device,
         "loss_module": loss_module,
         **kwargs,
     }

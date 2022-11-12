@@ -5,6 +5,7 @@ from torch.utils import tensorboard as tb
 
 import cifar10_utils
 import mlp_pytorch
+from train_mlp_pytorch import *
 
 classes = (
     "plane",
