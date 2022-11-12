@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+from torch.utils import tensorboard as tb
 
 import cifar10_utils
 import mlp_pytorch
@@ -19,7 +20,7 @@ classes = (
 )
 
 
-def show_cifar10_datapoint(x: torch.Tensor, label: str):
+def show_cifar10_datapoint(x: torch.Tensor, label: str) -> np.ndarray:
     lab = int(label)
     # cifar10 images have shape (3, 32, 32)
     x = np.transpose(x.numpy(), (1, 2, 0))
@@ -29,6 +30,7 @@ def show_cifar10_datapoint(x: torch.Tensor, label: str):
     x = x.reshape(32, 32, 3)
     plt.imshow(x)
     plt.title(f"Class {lab}: {classes[lab]}")
+    return x
 
 
 data_dir = "data"
@@ -44,7 +46,7 @@ trainiter = iter(trainloader)
 
 xs, labs = next(trainiter)
 i = 3
-show_cifar10_datapoint(xs[i], labs[i])
+img = show_cifar10_datapoint(xs[i], labs[i])
 
 
 mlp = mlp_pytorch.MLP(32 * 32 * 3, [128], 10, use_batch_norm=True)
@@ -62,3 +64,11 @@ mlp(xs)
 loss = torch.nn.CrossEntropyLoss()
 
 loss(logits, labs)
+
+
+writer = tb.SummaryWriter("data/tensorboard/scratch")
+
+# Write image data to TensorBoard log dir
+# images should be CxWxH
+# writer.add_image("test cifar10 image", np.transpose(img, (2, 0, 1)))
+# writer.flush()

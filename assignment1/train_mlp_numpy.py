@@ -17,20 +17,19 @@
 This module implements training and evaluation of a multi-layer perceptron in NumPy.
 You should fill in code into indicated sections.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import argparse
-import numpy as np
 import os
-from tqdm.auto import tqdm
 from copy import deepcopy
+
+import numpy as np
+import torch
+from tqdm.auto import tqdm
+
+import cifar10_utils
 from mlp_numpy import MLP
 from modules import CrossEntropyModule
-import cifar10_utils
-
-import torch
 
 
 def confusion_matrix(predictions, targets):
@@ -55,7 +54,7 @@ def confusion_matrix(predictions, targets):
     return conf_mat
 
 
-def confusion_matrix_to_metrics(confusion_matrix, beta=1.):
+def confusion_matrix_to_metrics(confusion_matrix, beta=1.0):
     """
     Converts a confusion matrix to accuracy, precision, recall and f1 scores.
     Args:
@@ -103,7 +102,6 @@ def evaluate_model(model, data_loader, num_classes=10):
     return metrics
 
 
-
 def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
     """
     Performs a full training cycle of MLP model.
@@ -119,15 +117,15 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
       model: An instance of 'MLP', the trained model that performed best on the validation set.
       val_accuracies: A list of scalar floats, containing the accuracies of the model on the
                       validation set per epoch (element 0 - performance after epoch 1)
-      test_accuracy: scalar float, average accuracy on the test dataset of the model that 
+      test_accuracy: scalar float, average accuracy on the test dataset of the model that
                      performed best on the validation. Between 0.0 and 1.0
-      logging_info: An arbitrary object containing logging information. This is for you to 
+      logging_info: An arbitrary object containing logging information. This is for you to
                     decide what to put in here.
 
     TODO:
-    - Implement the training of the MLP model. 
+    - Implement the training of the MLP model.
     - Evaluate your model on the whole validation set each epoch.
-    - After finishing training, evaluate your model that performed best on the validation set, 
+    - After finishing training, evaluate your model that performed best on the validation set,
       on the whole test dataset.
     - Integrate _all_ input arguments of this function in your training. You are allowed to add
       additional input argument if you assign it a default value that represents the plain training
@@ -142,8 +140,9 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
 
     ## Loading the dataset
     cifar10 = cifar10_utils.get_cifar10(data_dir)
-    cifar10_loader = cifar10_utils.get_dataloader(cifar10, batch_size=batch_size,
-                                                  return_numpy=True)
+    cifar10_loader = cifar10_utils.get_dataloader(
+        cifar10, batch_size=batch_size, return_numpy=True
+    )
 
     #######################
     # PUT YOUR CODE HERE  #
@@ -165,31 +164,37 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
     return model, val_accuracies, test_accuracy, logging_dict
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Command line arguments
     parser = argparse.ArgumentParser()
-    
+
     # Model hyperparameters
-    parser.add_argument('--hidden_dims', default=[128], type=int, nargs='+',
-                        help='Hidden dimensionalities to use inside the network. To specify multiple, use " " to separate them. Example: "256 128"')
-    
+    parser.add_argument(
+        "--hidden_dims",
+        default=[128],
+        type=int,
+        nargs="+",
+        help='Hidden dimensionalities to use inside the network. To specify multiple, use " " to separate them. Example: "256 128"',
+    )
+
     # Optimizer hyperparameters
-    parser.add_argument('--lr', default=0.1, type=float,
-                        help='Learning rate to use')
-    parser.add_argument('--batch_size', default=128, type=int,
-                        help='Minibatch size')
+    parser.add_argument("--lr", default=0.1, type=float, help="Learning rate to use")
+    parser.add_argument("--batch_size", default=128, type=int, help="Minibatch size")
 
     # Other hyperparameters
-    parser.add_argument('--epochs', default=10, type=int,
-                        help='Max number of epochs')
-    parser.add_argument('--seed', default=42, type=int,
-                        help='Seed to use for reproducing results')
-    parser.add_argument('--data_dir', default='data/', type=str,
-                        help='Data directory where to store/find the CIFAR10 dataset.')
+    parser.add_argument("--epochs", default=10, type=int, help="Max number of epochs")
+    parser.add_argument(
+        "--seed", default=42, type=int, help="Seed to use for reproducing results"
+    )
+    parser.add_argument(
+        "--data_dir",
+        default="data/",
+        type=str,
+        help="Data directory where to store/find the CIFAR10 dataset.",
+    )
 
     args = parser.parse_args()
     kwargs = vars(args)
 
     train(**kwargs)
     # Feel free to add any additional functions, such as plotting of the loss curve here
-    
