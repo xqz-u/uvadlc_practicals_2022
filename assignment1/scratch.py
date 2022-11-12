@@ -87,12 +87,12 @@ preds_ng.requires_grad
 preds_ng1.requires_grad
 
 
-# cifar10 = cifar10_utils.get_cifar10("data")
-# cifar10_loader = cifar10_utils.get_dataloader(
-#     cifar10, batch_size=16, return_numpy=False
-# )
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# model = MLP(32 * 32 * 3, [128], 10, use_batch_norm=True).to(device)
+cifar10 = cifar10_utils.get_cifar10("data")
+cifar10_loader = cifar10_utils.get_dataloader(
+    cifar10, batch_size=16, return_numpy=False
+)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = MLP(32 * 32 * 3, [128], 10, use_batch_norm=True).to(device)
 # xs, labels = next(iter(cifar10_loader["validation"]))
 # preds = model(xs)
 # pred_labels = preds.argmax(1)
