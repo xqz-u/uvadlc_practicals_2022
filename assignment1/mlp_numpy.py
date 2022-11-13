@@ -19,7 +19,12 @@ You should fill in code into indicated sections.
 """
 from __future__ import absolute_import, division, print_function
 
-from modules import *
+from copy import deepcopy
+from typing import List, Tuple
+
+import numpy as np
+
+import modules as m
 
 
 class MLP(object):
@@ -29,88 +34,69 @@ class MLP(object):
     Once initialized an MLP object can perform forward and backward.
     """
 
-    def __init__(self, n_inputs, n_hidden, n_classes):
+    input_layer: m.LinearModule
+    hidden_layers: List[Tuple[m.ELUModule, m.LinearModule]]
+    softmax_module: m.SoftMaxModule
+
+    def __init__(self, n_inputs: int, n_hidden: List[int], n_classes: int):
+        n_hidden.append(n_classes)
+        self.input_layer = m.LinearModule(n_inputs, n_hidden[0], input_layer=True)
+        self.hidden_layers = [
+            (m.ELUModule(), m.LinearModule(*dims))
+            for dims in zip(n_hidden, n_hidden[1:])
+        ]
+        self.softmax_module = m.SoftMaxModule()
+
+    def forward(self, x: np.ndarray) -> np.ndarray:
         """
-        Initializes MLP object.
-
-        Args:
-          n_inputs: number of inputs.
-          n_hidden: list of ints, specifies the number of units
-                    in each linear layer. If the list is empty, the MLP
-                    will not have any linear layers, and the model
-                    will simply perform a multinomial logistic regression.
-          n_classes: number of classes of the classification problem.
-                     This number is required in order to specify the
-                     output dimensions of the MLP
-
-        TODO:
-        Implement initialization of the network.
-        """
-
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-        pass
-        #######################
-        # END OF YOUR CODE    #
-        #######################
-
-    def forward(self, x):
-        """
-        Performs forward pass of the input. Here an input tensor x is transformed through
-        several layer transformations.
+        Performs forward pass of the input. Here an input tensor x is
+        transformed through several layer transformations.
 
         Args:
           x: input to the network
         Returns:
           out: outputs of the network
-
-        TODO:
-        Implement forward pass of the network.
         """
+        out = self.input_layer.forward(x.reshape(x.shape[0], -1))
+        for activation, linear in self.hidden_layers:
+            out = linear.forward(activation.forward(out))
+        return self.softmax_module.forward(out)
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-
-        #######################
-        # END OF YOUR CODE    #
-        #######################
-
-        return out
-
-    def backward(self, dout):
+    def backward(self, dout: np.ndarray) -> np.ndarray:
         """
         Performs backward pass given the gradients of the loss.
 
         Args:
           dout: gradients of the loss
-
-        TODO:
-        Implement backward pass of the network.
         """
-
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-        pass
-        #######################
-        # END OF YOUR CODE    #
-        #######################
+        dout = self.softmax_module.backward(dout)
+        for activation, linear in self.hidden_layers:
+            dout = activation.backward(linear.backward(dout))
+        return self.input_layer.backward(dout)
 
     def clear_cache(self):
         """
         Remove any saved tensors for the backward pass from any module.
-        Used to clean-up model from any remaining input data when we want to save it.
-
-        TODO:
-        Iterate over modules and call the 'clear_cache' function.
+        Used to clean-up model from any remaining input data when we want to
+        save it.
         """
+        self.input_layer.clear_cache()
+        for activation, linear in self.hidden_layers:
+            activation.clear_cache()
+            linear.clear_cache()
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-        pass
-        #######################
-        # END OF YOUR CODE    #
-        #######################
+    def state_dict(self) -> List[Tuple[np.ndarray, np.ndarray]]:
+        weights, biases = [], []
+        for param, store in zip(["weight", "bias"], [weights, biases]):
+            store.append(self.input_layer.params[param])
+            for _, linear in self.hidden_layers:
+                store.append(linear.params[param])
+        return deepcopy(zip(weights, biases))
+
+    def load_state_dict(self, state_dict: List[Tuple[np.ndarray, np.ndarray]]):
+        (in_weight, in_bias), *rest_params = state_dict
+        self.input_layer.params["weight"] = in_weight
+        self.input_layer.params["bias"] = in_bias
+        for (_, linear), (weight, bias) in zip(self.hidden_layers, rest_params):
+            linear.params["weight"] = weight
+            linear.params["bias"] = bias

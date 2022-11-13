@@ -80,3 +80,31 @@ def set_seeds(seed: int):
         torch.backends.cudnn.determinstic = True
         torch.backends.cudnn.benchmark = False
     logger.debug("Set seed %d for reproducibility", seed)
+
+
+def confusion_matrix(predictions: np.ndarray, targets: np.ndarray) -> np.ndarray:
+    conf_mat = np.zeros((predictions.shape[1],) * 2)
+    pred_labels = predictions.argmax(1)
+    for pred, truth in zip(pred_labels, targets):
+        conf_mat[truth, pred] += 1
+    return conf_mat
+
+
+def confusion_matrix_to_metrics(
+    confusion_matrix: np.ndarray, beta: float = 1.0, **_
+) -> MetricsDict:
+    correct_preds = np.diag(confusion_matrix)
+    col_sums = confusion_matrix.sum(0)
+    row_sums = confusion_matrix.sum(1)
+    precision = correct_preds / col_sums
+    recall = correct_preds / row_sums
+    beta_squared = beta**2
+    return {
+        "accuracy": correct_preds.sum() / col_sums.sum(),
+        "precision": precision,
+        "recall": recall,
+        "f1_beta": (1 + beta_squared)
+        * precision
+        * recall
+        / (beta_squared * precision + recall),
+    }

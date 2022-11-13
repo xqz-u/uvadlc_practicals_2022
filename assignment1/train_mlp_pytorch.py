@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
-from collections import OrderedDict
 from typing import List, Tuple
 
 import numpy as np
@@ -15,34 +14,6 @@ import cifar10_utils
 import plot as p
 import utils as u
 from mlp_pytorch import MLP
-
-
-def confusion_matrix(predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-    conf_mat = torch.zeros((predictions.shape[1],) * 2)
-    pred_labels = predictions.argmax(1)
-    for pred, truth in zip(pred_labels, targets):
-        conf_mat[truth, pred] += 1
-    return conf_mat
-
-
-def confusion_matrix_to_metrics(
-    confusion_matrix: torch.Tensor, beta: float = 1.0, **_
-) -> u.MetricsDict:
-    correct_preds = torch.diag(confusion_matrix)
-    col_sums = confusion_matrix.sum(0)
-    row_sums = confusion_matrix.sum(1)
-    precision = correct_preds / col_sums
-    recall = correct_preds / row_sums
-    beta_squared = beta**2
-    return {
-        "accuracy": correct_preds.sum() / col_sums.sum(),
-        "precision": precision,
-        "recall": recall,
-        "f1_beta": (1 + beta_squared)
-        * precision
-        * recall
-        / (beta_squared * precision + recall),
-    }
 
 
 def evaluate_model(
@@ -60,9 +31,9 @@ def evaluate_model(
             xs = np.transpose(xs, (0, 2, 3, 1)).to(model.device)
             predictions = model(xs)
             loss += loss_module(predictions, labels).item() * len(xs)
-            conf_mat += confusion_matrix(predictions, labels)
+            conf_mat += u.confusion_matrix(predictions, labels)
             datapoints += len(xs)
-        metrics = confusion_matrix_to_metrics(conf_mat, **kwargs)
+        metrics = u.confusion_matrix_to_metrics(conf_mat, **kwargs)
     return {**metrics, f"{mode}_loss": loss / datapoints}
 
 
@@ -104,7 +75,14 @@ def train_one_epoch(
 
 # TODO timing?
 def train(
-    hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir, **kwargs
+    hidden_dims: List[int],
+    lr: float,
+    use_batch_norm: bool,
+    batch_size: int,
+    epochs: int,
+    seed: int,
+    data_dir: str,
+    **kwargs,
 ) -> Tuple[MLP, List[float], float, u.MetricsDict]:
     # Set the random seeds for reproducibility
     u.set_seeds(seed)
@@ -130,7 +108,7 @@ def train(
         **kwargs,
     }
 
-    best_params: OrderedDict = None
+    best_params: List[np.ndarray] = None
     train_losses, val_losses, val_accuracies = [], [], []
     for epoch in range(epochs):
         logger.debug("Epoch: %s", epoch)
@@ -204,7 +182,15 @@ if __name__ == "__main__":
 # logger = logging.getLogger("PyTorchTrainer")
 # writer = tb.SummaryWriter("data/tensorboard/MLP_cifar10")
 # model, val_accuracies, test_accuracy, info = train(
-#     [128], 0.1, True, 128, 10, 42, "data", num_classes=10, tb_writer=writer
+#     [128],
+#     0.1,
+#     True,
+#     128,
+#     10,
+#     42,
+#     "data",
+#     num_classes=10,
+#     # tb_writer=writer
 # )
 # plot_model_performance(val_accuracies, info["loss"], savepath="data/assets")
 # torch.save(model.state_dict(), "data/assets/best_model.torch")

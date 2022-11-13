@@ -19,63 +19,23 @@ You should fill in code into indicated sections.
 """
 from __future__ import absolute_import, division, print_function
 
-import argparse
+import logging
 import os
-from copy import deepcopy
+from collections import OrderedDict
+from typing import List, Tuple
 
 import numpy as np
+import tensorboard as tb
 import torch
-from tqdm.auto import tqdm
+from torch.utils import data
 
 import cifar10_utils
-from mlp_numpy import MLP
-from modules import CrossEntropyModule
+import mlp_numpy as mlp
+import modules as m
+import utils as u
 
 
-def confusion_matrix(predictions, targets):
-    """
-    Computes the confusion matrix, i.e. the number of true positives, false positives, true negatives and false negatives.
-
-    Args:
-      predictions: 2D float array of size [batch_size, n_classes], predictions of the model (logits)
-      labels: 1D int array of size [batch_size]. Ground truth labels for
-              each sample in the batch
-    Returns:
-      confusion_matrix: confusion matrix per class, 2D float array of size [n_classes, n_classes]
-    """
-
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
-
-    #######################
-    # END OF YOUR CODE    #
-    #######################
-    return conf_mat
-
-
-def confusion_matrix_to_metrics(confusion_matrix, beta=1.0):
-    """
-    Converts a confusion matrix to accuracy, precision, recall and f1 scores.
-    Args:
-        confusion_matrix: 2D float array of size [n_classes, n_classes], the confusion matrix to convert
-    Returns: a dictionary with the following keys:
-        accuracy: scalar float, the accuracy of the confusion matrix
-        precision: 1D float array of size [n_classes], the precision for each class
-        recall: 1D float array of size [n_classes], the recall for each clas
-        f1_beta: 1D float array of size [n_classes], the f1_beta scores for each class
-    """
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
-
-    #######################
-    # END OF YOUR CODE    #
-    #######################
-    return metrics
-
-
-def evaluate_model(model, data_loader, num_classes=10):
+def evaluate_model(model: mlp.MLP, data_loader: data.DataLoader, num_classes=10):
     """
     Performs the evaluation of the MLP model on a given dataset.
 
@@ -99,38 +59,61 @@ def evaluate_model(model, data_loader, num_classes=10):
     #######################
     # END OF YOUR CODE    #
     #######################
-    return metrics
+    return
 
 
-def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
+def optimize(model: mlp.MLP, lr: float = 0.1, **_):
+    for param in ["weight", "bias"]:
+        model.input_layer.params[param] += lr * model.input_layer.grads[param]
+        for _, linear in model.hidden_layers:
+            linear.params[param] += lr * linear.grads[param]
+
+
+def train_one_epoch(
+    train_dataloader: data.DataLoader,
+    model: mlp.MLP,
+    running_loss_period: int = 50,
+    **kwargs,
+) -> u.MetricsDict:
+    loss_module = kwargs["loss_module"]
+    epoch_loss, running_loss, datapoints = 0.0, 0.0, 0
+    for i, (xs, labels) in enumerate(train_dataloader):
+        xs = np.transpose(xs, (0, 2, 3, 1))
+        # forward
+        predictions = model.forward(xs)
+        loss = loss_module.forward(predictions, labels)
+        # backward
+        _ = model.backward(loss_module.backward(predictions, labels))
+        # optimize
+        optimize(model, **kwargs)
+        datapoints += len(xs)
+        epoch_loss += loss * len(xs)
+        running_loss += loss
+        if i % running_loss_period == running_loss_period - 1:
+            mean_running_loss = running_loss / running_loss_period
+            logger.debug(
+                "[%d %d train] loss: %.3f", i + 1, datapoints, mean_running_loss
+            )
+            if writer := kwargs.get("tb_writer"):
+                writer.add_scalar(
+                    "train_loss",
+                    mean_running_loss,
+                    kwargs["epoch"] * len(train_dataloader) + i,
+                )
+            running_loss = 0.0
+    return {"train_loss": epoch_loss / datapoints}
+
+
+def train(
+    hidden_dims: List[int],
+    lr: float,
+    batch_size: int,
+    epochs: int,
+    seed: int,
+    data_dir: str,
+    **kwargs,
+) -> Tuple[mlp.MLP, List[float], float, u.MetricsDict]:
     """
-    Performs a full training cycle of MLP model.
-
-    Args:
-      hidden_dims: A list of ints, specificying the hidden dimensionalities to use in the MLP.
-      lr: Learning rate of the SGD to apply.
-      batch_size: Minibatch size for the data loaders.
-      epochs: Number of training epochs to perform.
-      seed: Seed to use for reproducible results.
-      data_dir: Directory where to store/find the CIFAR10 dataset.
-    Returns:
-      model: An instance of 'MLP', the trained model that performed best on the validation set.
-      val_accuracies: A list of scalar floats, containing the accuracies of the model on the
-                      validation set per epoch (element 0 - performance after epoch 1)
-      test_accuracy: scalar float, average accuracy on the test dataset of the model that
-                     performed best on the validation. Between 0.0 and 1.0
-      logging_info: An arbitrary object containing logging information. This is for you to
-                    decide what to put in here.
-
-    TODO:
-    - Implement the training of the MLP model.
-    - Evaluate your model on the whole validation set each epoch.
-    - After finishing training, evaluate your model that performed best on the validation set,
-      on the whole test dataset.
-    - Integrate _all_ input arguments of this function in your training. You are allowed to add
-      additional input argument if you assign it a default value that represents the plain training
-      (e.g. '..., new_param=False')
-
     Hint: you can save your best model by deepcopy-ing it.
     """
 
@@ -138,63 +121,109 @@ def train(hidden_dims, lr, batch_size, epochs, seed, data_dir):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    ## Loading the dataset
+    # Loading the dataset
     cifar10 = cifar10_utils.get_cifar10(data_dir)
     cifar10_loader = cifar10_utils.get_dataloader(
         cifar10, batch_size=batch_size, return_numpy=True
     )
 
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
+    model = mlp.MLP(32 * 32 * 3, hidden_dims, kwargs["num_classes"])
+    loss_module = m.CrossEntropyModule()
+    writer = kwargs.get("tb_writer")
 
-    # TODO: Initialize model and loss module
-    model = ...
-    loss_module = ...
-    # TODO: Training loop including validation
-    val_accuracies = ...
-    # TODO: Test best model
-    test_accuracy = ...
-    # TODO: Add any information you might want to save for plotting
-    logging_info = ...
-    #######################
-    # END OF YOUR CODE    #
-    #######################
+    evaluation_args = {
+        "num_classes": kwargs["num_classes"],
+        "loss_module": loss_module,
+        **kwargs,
+    }
 
-    return model, val_accuracies, test_accuracy, logging_dict
+    best_params: OrderedDict = None
+    train_losses, val_losses, val_accuracies = [], [], []
+    for epoch in range(epochs):
+        logger.debug("Epoch: %s", epoch)
+        train_metrics = train_one_epoch(
+            cifar10_loader["train"],
+            model,
+            epoch=epoch,
+            lr=lr,
+            **evaluation_args,
+        )
+        # model.train()
+        train_losses.append(train_metrics["train_loss"])
+        logger.info("[%d train     ] mean loss: %.3f", epoch, train_losses[-1])
+        train_metrics.update(
+            evaluate_model(
+                model,
+                cifar10_loader["validation"],
+                mode="validation",
+                **evaluation_args,
+            )
+        )
+        val_losses.append(train_metrics["validation_loss"])
+        logger.info(
+            "[%d validation] mean loss: %.3f accuracy: %.3f",
+            epoch,
+            val_losses[-1],
+            train_metrics["accuracy"],
+        )
+        accuracy = train_metrics["accuracy"]
+        if writer:
+            writer.add_scalar("validation_accuracy", accuracy, epoch)
+            writer.flush()
+        if best_params is None or accuracy > val_accuracies[-1]:
+            logger.debug("[Epoch %s] update best model...", epoch)
+            best_params = model.state_dict()
+        val_accuracies.append(accuracy)
+
+    return model
+
+    model.load_state_dict(best_params)
+    test_metrics = evaluate_model(
+        model, cifar10_loader["test"], mode="test", **evaluation_args
+    )
+    if writer:
+        writer.add_graph(model, next(iter(cifar10_loader["train"]))[0])
+        writer.flush()
+    return (
+        model,
+        val_accuracies,
+        test_metrics["accuracy"],
+        {"loss": {"Train": np.array(train_losses), "Validation": np.array(val_losses)}},
+    )
 
 
 if __name__ == "__main__":
-    # Command line arguments
-    parser = argparse.ArgumentParser()
-
-    # Model hyperparameters
-    parser.add_argument(
-        "--hidden_dims",
-        default=[128],
-        type=int,
-        nargs="+",
-        help='Hidden dimensionalities to use inside the network. To specify multiple, use " " to separate them. Example: "256 128"',
+    kwargs = u.cl_parser()
+    kwargs.pop("use_batch_norm")
+    u.setup_root_logging(logging.DEBUG if kwargs.pop("verbose") else logging.INFO)
+    logger = logging.getLogger("NumPyTrainer")
+    model, validation_accuracies, test_accuracy, info = train(
+        **kwargs,
+        num_classes=10,
+        tb_writer=tb.SummaryWriter(kwargs.pop("tensorboard_dir")),
     )
+    # Feel free to add any additional functions, such as plotting of the loss
+    # curve here
 
-    # Optimizer hyperparameters
-    parser.add_argument("--lr", default=0.1, type=float, help="Learning rate to use")
-    parser.add_argument("--batch_size", default=128, type=int, help="Minibatch size")
 
-    # Other hyperparameters
-    parser.add_argument("--epochs", default=10, type=int, help="Max number of epochs")
-    parser.add_argument(
-        "--seed", default=42, type=int, help="Seed to use for reproducing results"
-    )
-    parser.add_argument(
-        "--data_dir",
-        default="data/",
-        type=str,
-        help="Data directory where to store/find the CIFAR10 dataset.",
-    )
+u.setup_root_logging(logging.DEBUG)
+logger = logging.getLogger("NumPyTrainer")
+model, val_accuracies, test_accuracy, info = train(
+    [128], 0.1, 128, 10, 42, "data", num_classes=10
+)
 
-    args = parser.parse_args()
-    kwargs = vars(args)
-
-    train(**kwargs)
-    # Feel free to add any additional functions, such as plotting of the loss curve here
+# model = mlp.MLP(32 * 32 * 3, [4], 10)
+# loss_module = m.CrossEntropyModule()
+# data_dir = "data"
+# batch_size = 4
+# cifar10 = cifar10_utils.get_cifar10(data_dir)
+# cifar10_loader = cifar10_utils.get_dataloader(
+#     cifar10, batch_size=batch_size, return_numpy=True
+# )
+# xs, labs = next(iter(cifar10_loader["train"]))
+# preds = model.forward(xs)
+# preds
+# loss = loss_module.forward(preds, labs)
+# loss
+# loss_grad = loss_module.backward(preds, labs)
+# in_grad = model.backward(loss_grad)

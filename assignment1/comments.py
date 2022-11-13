@@ -82,3 +82,21 @@ Returns:
 
 Hint: you can save your best model by deepcopy-ing it.
 """
+
+
+# --------------------------
+# mlp_numpy.py
+
+"""
+Initializes MLP object.
+
+Args:
+  n_inputs: number of inputs.
+  n_hidden: list of ints, specifies the number of units
+            in each linear layer. If the list is empty, the MLP
+            will not have any linear layers, and the model
+            will simply perform a multinomial logistic regression.
+  n_classes: number of classes of the classification problem.
+             This number is required in order to specify the
+             output dimensions of the MLP
+"""

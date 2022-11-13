@@ -27,10 +27,9 @@ class LinearModule(object):
     Linear module. Applies a linear transformation to the input data.
     """
 
-    params: Dict[str, np.ndarray] = {}
-    grads: Dict[str, np.ndarray] = {}
+    params: Dict[str, np.ndarray]
+    grads: Dict[str, np.ndarray]
     last_input: np.ndarray = None
-    weights: np.ndarray
 
     def __init__(self, in_features: int, out_features: int, input_layer=False):
         """
@@ -44,14 +43,18 @@ class LinearModule(object):
         Hint: the input_layer argument might be needed for the initialization
         Also, initialize gradients with zeros.
         """
-        self.params["weight"] = np.random.normal(
-            0.0,
-            np.sqrt((1 if input_layer else 2) / in_features),
-            size=(out_features, in_features),
-        )
-        # kinda useless for now? also not setting the bias since we do not
-        # seem to use it
-        self.grads["weight"] = np.zeros_like(self.params["weight"])
+        self.params = {
+            "weight": np.random.normal(
+                0.0,
+                np.sqrt((1 if input_layer else 2) / in_features),
+                size=(out_features, in_features),
+            ),
+            "bias": np.zeros(out_features),
+        }
+        self.grads = {
+            "weight": np.zeros_like(self.params["weight"]),
+            "bias": np.zeros_like(self.params["bias"]),
+        }
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
@@ -66,7 +69,7 @@ class LinearModule(object):
         be used in backward pass computation.
         """
         self.last_input = x
-        return x @ self.params["weight"].T
+        return (x @ self.params["weight"].T) + self.params["bias"]
 
     def backward(self, dout: np.ndarray) -> np.ndarray:
         """
@@ -78,6 +81,7 @@ class LinearModule(object):
           dx: gradients with respect to the input of the module
         """
         self.grads["weight"] = dout.T @ self.last_input
+        self.grads["bias"] = np.ones(dout.shape[0]) @ dout
         return dout @ self.params["weight"]
 
     def clear_cache(self):
@@ -191,7 +195,7 @@ class CrossEntropyModule(object):
         Returns:
           out: cross entropy loss
         """
-        return -np.sum(np.log(x).T * y) / x.shape[1]
+        return -np.sum(np.log(x).T * y) / x.shape[0]
 
     def backward(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """
@@ -202,4 +206,4 @@ class CrossEntropyModule(object):
         Returns:
           dx: gradient of the loss with the respect to the input x.
         """
-        return y[:, None] / (x * -x.shape[1])
+        return y[:, None] / (x * -x.shape[0])

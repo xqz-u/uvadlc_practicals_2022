@@ -10,6 +10,8 @@ import utils as u
 logger = logging.getLogger(__name__)
 
 
+# TODO be able to differentiate between pytorch and numpy plots or
+# they will be overridden
 def plot_model_performance(
     accuracy: np.ndarray, loss_dict: u.MetricsDict, savepath: str = None
 ) -> plt.Axes:
