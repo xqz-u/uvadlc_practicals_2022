@@ -21,6 +21,8 @@ from typing import Dict
 
 import numpy as np
 
+import utils as u
+
 
 class LinearModule(object):
     """
@@ -195,7 +197,7 @@ class CrossEntropyModule(object):
         Returns:
           out: cross entropy loss
         """
-        return -np.sum(np.log(x).T * y) / x.shape[0]
+        return -np.sum(u.one_hot(x.shape[1], y) * np.log(x)) / x.shape[0]
 
     def backward(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
         """
@@ -206,4 +208,4 @@ class CrossEntropyModule(object):
         Returns:
           dx: gradient of the loss with the respect to the input x.
         """
-        return y[:, None] / (x * -x.shape[0])
+        return -u.one_hot(x.shape[1], y) / (x * x.shape[0])

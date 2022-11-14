@@ -17,7 +17,6 @@ import unittest
 
 import numpy as np
 
-from cifar10_utils import get_cifar10
 from modules import CrossEntropyModule, ELUModule, LinearModule, SoftMaxModule
 
 

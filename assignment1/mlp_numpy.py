@@ -34,18 +34,25 @@ class MLP(object):
     Once initialized an MLP object can perform forward and backward.
     """
 
-    input_layer: m.LinearModule
-    hidden_layers: List[Tuple[m.ELUModule, m.LinearModule]]
+    layers: List[Tuple[m.ELUModule, m.LinearModule]]
     softmax_module: m.SoftMaxModule
 
     def __init__(self, n_inputs: int, n_hidden: List[int], n_classes: int):
         n_hidden.append(n_classes)
-        self.input_layer = m.LinearModule(n_inputs, n_hidden[0], input_layer=True)
-        self.hidden_layers = [
+        self.layers = [(None, m.LinearModule(n_inputs, n_hidden[0], input_layer=True))]
+        self.layers += [
             (m.ELUModule(), m.LinearModule(*dims))
             for dims in zip(n_hidden, n_hidden[1:])
         ]
         self.softmax_module = m.SoftMaxModule()
+
+    @property
+    def input_layer(self) -> m.LinearModule:
+        return self.layers[0][1]
+
+    @property
+    def hidden_layers(self) -> List[Tuple[m.CrossEntropyModule, m.LinearModule]]:
+        return self.layers[1:]
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """
@@ -86,17 +93,14 @@ class MLP(object):
             linear.clear_cache()
 
     def state_dict(self) -> List[Tuple[np.ndarray, np.ndarray]]:
-        weights, biases = [], []
-        for param, store in zip(["weight", "bias"], [weights, biases]):
-            store.append(self.input_layer.params[param])
-            for _, linear in self.hidden_layers:
-                store.append(linear.params[param])
-        return deepcopy(zip(weights, biases))
+        return deepcopy(
+            [
+                (linear.params["weight"], linear.params["bias"])
+                for _, linear in self.layers
+            ]
+        )
 
     def load_state_dict(self, state_dict: List[Tuple[np.ndarray, np.ndarray]]):
-        (in_weight, in_bias), *rest_params = state_dict
-        self.input_layer.params["weight"] = in_weight
-        self.input_layer.params["bias"] = in_bias
-        for (_, linear), (weight, bias) in zip(self.hidden_layers, rest_params):
+        for (_, linear), (weight, bias) in zip(self.layers, state_dict):
             linear.params["weight"] = weight
             linear.params["bias"] = bias

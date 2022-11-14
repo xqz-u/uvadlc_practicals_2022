@@ -21,7 +21,6 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import os
-from collections import OrderedDict
 from typing import List, Tuple
 
 import numpy as np
@@ -64,9 +63,8 @@ def evaluate_model(model: mlp.MLP, data_loader: data.DataLoader, num_classes=10)
 
 def optimize(model: mlp.MLP, lr: float = 0.1, **_):
     for param in ["weight", "bias"]:
-        model.input_layer.params[param] += lr * model.input_layer.grads[param]
-        for _, linear in model.hidden_layers:
-            linear.params[param] += lr * linear.grads[param]
+        for _, linear in model.layers:
+            linear.params[param] -= lr * linear.grads[param]
 
 
 def train_one_epoch(
@@ -137,7 +135,7 @@ def train(
         **kwargs,
     }
 
-    best_params: OrderedDict = None
+    best_params = None
     train_losses, val_losses, val_accuracies = [], [], []
     for epoch in range(epochs):
         logger.debug("Epoch: %s", epoch)
@@ -213,17 +211,26 @@ model, val_accuracies, test_accuracy, info = train(
 )
 
 # model = mlp.MLP(32 * 32 * 3, [4], 10)
+# # model = mlp.MLP(10, [], 10)
 # loss_module = m.CrossEntropyModule()
+# # xs, labs = np.random.randint(0, 10, size=(3, 10)), np.random.randint(0, 10, size=(3,))
 # data_dir = "data"
-# batch_size = 4
+# batch_size = 128
 # cifar10 = cifar10_utils.get_cifar10(data_dir)
 # cifar10_loader = cifar10_utils.get_dataloader(
 #     cifar10, batch_size=batch_size, return_numpy=True
 # )
 # xs, labs = next(iter(cifar10_loader["train"]))
 # preds = model.forward(xs)
-# preds
-# loss = loss_module.forward(preds, labs)
-# loss
-# loss_grad = loss_module.backward(preds, labs)
-# in_grad = model.backward(loss_grad)
+# # preds
+# # model.input_layer.grads["weight"]
+# # loss = loss_module.forward(preds, labs)
+# # loss
+# # loss_grad = loss_module.backward(preds, labs)
+# # in_grad = model.backward(loss_grad)
+# # model.input_layer.params["weight"]
+# # model.input_layer.grads["weight"]
+
+
+# optimize(model, lr=0.1)
+# model.input_layer.params["weight"]

@@ -108,3 +108,7 @@ def confusion_matrix_to_metrics(
         * recall
         / (beta_squared * precision + recall),
     }
+
+
+def one_hot(n_classes: int, targets: np.ndarray) -> np.ndarray:
+    return np.eye(n_classes)[targets]
