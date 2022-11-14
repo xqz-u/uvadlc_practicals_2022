@@ -10,10 +10,8 @@ import utils as u
 logger = logging.getLogger(__name__)
 
 
-# TODO be able to differentiate between pytorch and numpy plots or
-# they will be overridden
 def plot_model_performance(
-    accuracy: np.ndarray, loss_dict: u.MetricsDict, savepath: str = None
+    mlp_type: str, accuracy: np.ndarray, loss_dict: u.MetricsDict, savepath: str = None
 ) -> plt.Axes:
     fig, axes = plt.subplots(1, 2, figsize=(10, 7))
 
@@ -36,6 +34,7 @@ def plot_model_performance(
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
 
+    fig.suptitle(f"{mlp_type} MLP")
     fig.tight_layout()
 
     if savepath:
@@ -44,7 +43,8 @@ def plot_model_performance(
         else:
             os.makedirs(savepath, exist_ok=True)
             savepath = os.path.join(
-                savepath, f"performance_{str(time.time()).replace('.', '')}.png"
+                savepath,
+                f"{mlp_type}_performance_{str(time.time()).replace('.', '')}.png",
             )
         plt.savefig(savepath)
         logger.info("Saved plot to '%s'", savepath)

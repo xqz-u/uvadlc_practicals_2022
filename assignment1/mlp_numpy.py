@@ -77,7 +77,7 @@ class MLP(object):
           dout: gradients of the loss
         """
         dout = self.softmax_module.backward(dout)
-        for activation, linear in self.hidden_layers:
+        for activation, linear in self.hidden_layers[::-1]:
             dout = activation.backward(linear.backward(dout))
         return self.input_layer.backward(dout)
 

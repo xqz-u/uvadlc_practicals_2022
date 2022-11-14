@@ -20,21 +20,23 @@ You should fill in code into indicated sections.
 from __future__ import absolute_import, division, print_function
 
 import logging
-import os
 from typing import List, Tuple
 
 import numpy as np
-import tensorboard as tb
 import torch
 from torch.utils import data
+from torch.utils import tensorboard as tb
 
 import cifar10_utils
 import mlp_numpy as mlp
 import modules as m
+import plot as p
 import utils as u
 
 
-def evaluate_model(model: mlp.MLP, data_loader: data.DataLoader, num_classes=10):
+def evaluate_model(
+    model: mlp.MLP, data_loader: data.DataLoader, num_classes=10, **kwargs
+):
     """
     Performs the evaluation of the MLP model on a given dataset.
 
@@ -44,21 +46,20 @@ def evaluate_model(model: mlp.MLP, data_loader: data.DataLoader, num_classes=10)
     Returns:
         metrics: A dictionary calculated using the conversion of the confusion matrix to metrics.
 
-    TODO:
-    Implement evaluation of the MLP model on a given dataset.
-
     Hint: make sure to return the average accuracy of the whole dataset,
           independent of batch sizes (not all batches might be the same size).
     """
-
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
-
-    #######################
-    # END OF YOUR CODE    #
-    #######################
-    return
+    loss, datapoints = 0.0, 0
+    mode, loss_module = kwargs["mode"], kwargs["loss_module"]
+    conf_mat = np.zeros((num_classes,) * 2)
+    for i, (xs, labels) in enumerate(data_loader):
+        xs = np.transpose(xs, (0, 2, 3, 1))
+        predictions = model.forward(xs)
+        loss += loss_module.forward(predictions, labels) * len(xs)
+        conf_mat += u.confusion_matrix(predictions, labels)
+        datapoints += len(xs)
+    metrics = u.confusion_matrix_to_metrics(conf_mat, **kwargs)
+    return {**metrics, f"{mode}_loss": loss / datapoints}
 
 
 def optimize(model: mlp.MLP, lr: float = 0.1, **_):
@@ -146,7 +147,6 @@ def train(
             lr=lr,
             **evaluation_args,
         )
-        # model.train()
         train_losses.append(train_metrics["train_loss"])
         logger.info("[%d train     ] mean loss: %.3f", epoch, train_losses[-1])
         train_metrics.update(
@@ -173,15 +173,10 @@ def train(
             best_params = model.state_dict()
         val_accuracies.append(accuracy)
 
-    return model
-
     model.load_state_dict(best_params)
     test_metrics = evaluate_model(
         model, cifar10_loader["test"], mode="test", **evaluation_args
     )
-    if writer:
-        writer.add_graph(model, next(iter(cifar10_loader["train"]))[0])
-        writer.flush()
     return (
         model,
         val_accuracies,
@@ -195,6 +190,8 @@ if __name__ == "__main__":
     kwargs.pop("use_batch_norm")
     u.setup_root_logging(logging.DEBUG if kwargs.pop("verbose") else logging.INFO)
     logger = logging.getLogger("NumPyTrainer")
+    logger.info("Tensorboard logs folder: %s", kwargs["tensorboard_dir"])
+    logger.info("Assets folder: %s", kwargs["assets_dir"])
     model, validation_accuracies, test_accuracy, info = train(
         **kwargs,
         num_classes=10,
@@ -202,17 +199,21 @@ if __name__ == "__main__":
     )
     # Feel free to add any additional functions, such as plotting of the loss
     # curve here
+    p.plot_model_performance(
+        "NumPy", validation_accuracies, info["loss"], savepath=kwargs.pop("assets_dir")
+    )
 
 
-u.setup_root_logging(logging.DEBUG)
-logger = logging.getLogger("NumPyTrainer")
-model, val_accuracies, test_accuracy, info = train(
-    [128], 0.1, 128, 10, 42, "data", num_classes=10
-)
+# u.setup_root_logging(logging.DEBUG)
+# logger = logging.getLogger("NumPyTrainer")
+# model, val_accuracies, test_accuracy, info = train(
+#     [256, 128], 0.1, 128, 10, 42, "data", num_classes=10
+# )
+# p.plot_model_performance("NumPy", val_accuracies, info["loss"], savepath="data/assets")
 
-# model = mlp.MLP(32 * 32 * 3, [4], 10)
-# # model = mlp.MLP(10, [], 10)
+# model = mlp.MLP(32 * 32 * 3, [128, 256], 10)
 # loss_module = m.CrossEntropyModule()
+# # model = mlp.MLP(10, [], 10)
 # # xs, labs = np.random.randint(0, 10, size=(3, 10)), np.random.randint(0, 10, size=(3,))
 # data_dir = "data"
 # batch_size = 128
@@ -222,14 +223,14 @@ model, val_accuracies, test_accuracy, info = train(
 # )
 # xs, labs = next(iter(cifar10_loader["train"]))
 # preds = model.forward(xs)
-# # preds
-# # model.input_layer.grads["weight"]
-# # loss = loss_module.forward(preds, labs)
-# # loss
-# # loss_grad = loss_module.backward(preds, labs)
-# # in_grad = model.backward(loss_grad)
-# # model.input_layer.params["weight"]
-# # model.input_layer.grads["weight"]
+# # # preds
+# model.input_layer.grads["weight"]
+# loss = loss_module.forward(preds, labs)
+# # # loss
+# loss_grad = loss_module.backward(preds, labs)
+# in_grad = model.backward(loss_grad)
+# # # model.input_layer.params["weight"]
+# # # model.input_layer.grads["weight"]
 
 
 # optimize(model, lr=0.1)

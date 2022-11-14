@@ -166,6 +166,11 @@ if __name__ == "__main__":
     kwargs = u.cl_parser()
     u.setup_root_logging(logging.DEBUG if kwargs.pop("verbose") else logging.INFO)
     logger = logging.getLogger("PyTorchTrainer")
+    logger.info(
+        "Tensorboard logs folder: %s\nAssets folder: %s",
+        kwargs["tensorboard_dir"],
+        kwargs["assets_dir"],
+    )
     model, validation_accuracies, test_accuracy, info = train(
         **kwargs,
         num_classes=10,
@@ -174,7 +179,10 @@ if __name__ == "__main__":
     # Feel free to add any additional functions, such as plotting of the loss
     # curve here
     p.plot_model_performance(
-        validation_accuracies, info["loss"], savepath=kwargs.pop("assets_dir")
+        "PyTorch",
+        validation_accuracies,
+        info["loss"],
+        savepath=kwargs.pop("assets_dir"),
     )
 
 
