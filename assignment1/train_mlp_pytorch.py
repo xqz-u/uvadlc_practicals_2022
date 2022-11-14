@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from matplotlib import pyplot as plt
 from torch.utils import data
 from torch.utils import tensorboard as tb
 
@@ -34,7 +35,7 @@ def evaluate_model(
             conf_mat += u.confusion_matrix(predictions, labels)
             datapoints += len(xs)
         metrics = u.confusion_matrix_to_metrics(conf_mat, **kwargs)
-    return {**metrics, f"{mode}_loss": loss / datapoints}
+    return {**metrics, f"{mode}_loss": loss / datapoints, "confusion_matrix": conf_mat}
 
 
 def train_one_epoch(
@@ -90,10 +91,7 @@ def train(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Loading the dataset
-    cifar10 = cifar10_utils.get_cifar10(data_dir)
-    cifar10_loader = cifar10_utils.get_dataloader(
-        cifar10, batch_size=batch_size, return_numpy=False
-    )
+    cifar10_loader = cifar10_utils.get_data(data_dir, batch_size, False)
 
     model = MLP(
         32 * 32 * 3, hidden_dims, kwargs["num_classes"], use_batch_norm=use_batch_norm
@@ -157,7 +155,13 @@ def train(
         model,
         val_accuracies,
         test_metrics["accuracy"],
-        {"loss": {"Train": np.array(train_losses), "Validation": np.array(val_losses)}},
+        {
+            "loss": {
+                "Train": np.array(train_losses),
+                "Validation": np.array(val_losses),
+            },
+            "confusion_matrix": test_metrics.pop("confusion_matrix"),
+        },
     )
 
 
@@ -166,16 +170,18 @@ if __name__ == "__main__":
     kwargs = u.cl_parser()
     u.setup_root_logging(logging.DEBUG if kwargs.pop("verbose") else logging.INFO)
     logger = logging.getLogger("PyTorchTrainer")
-    logger.info(
-        "Tensorboard logs folder: %s\nAssets folder: %s",
-        kwargs["tensorboard_dir"],
-        kwargs["assets_dir"],
-    )
+    logger.info("Tensorboard logs folder: %s", kwargs["tensorboard_dir"])
+    logger.info("Assets folder: %s", kwargs["assets_dir"])
     model, validation_accuracies, test_accuracy, info = train(
         **kwargs,
         num_classes=10,
         tb_writer=tb.SummaryWriter(kwargs.pop("tensorboard_dir")),
     )
+    # savepath = (
+    #     f"best_model_3072_{'-'.join(map(str, kwargs['hidden_dims']))}"
+    #     f"_10_batch{'1' if kwargs['use_batch_norm'] else '0'}_{time.time()}.torch"
+    # )
+    model.save("data/assets/best_model.torch")
     # Feel free to add any additional functions, such as plotting of the loss
     # curve here
     p.plot_model_performance(
@@ -184,21 +190,19 @@ if __name__ == "__main__":
         info["loss"],
         savepath=kwargs.pop("assets_dir"),
     )
+    plt.tight_layout()
+    p.plot_confusion_matrix(info["confusion_matrix"])
+    plt.tight_layout()
 
-
-# u.setup_root_logging(logging.INFO)
-# logger = logging.getLogger("PyTorchTrainer")
-# writer = tb.SummaryWriter("data/tensorboard/MLP_cifar10")
-# model, val_accuracies, test_accuracy, info = train(
-#     [128],
-#     0.1,
-#     True,
-#     128,
-#     10,
-#     42,
-#     "data",
-#     num_classes=10,
-#     # tb_writer=writer
-# )
-# plot_model_performance(val_accuracies, info["loss"], savepath="data/assets")
-# torch.save(model.state_dict(), "data/assets/best_model.torch")
+# kwargs = {
+#     "data_dir": "data/",
+#     "hidden_dims": [128],
+#     "lr": 0.1,
+#     "use_batch_norm": True,
+#     "batch_size": 128,
+#     "epochs": 10,
+#     "seed": 42,
+#     "tensorboard_dir": "",
+#     "assets_dir": "data/assets",
+#     "verbose": False,
+# }

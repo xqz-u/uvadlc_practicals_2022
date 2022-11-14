@@ -19,10 +19,13 @@ You should fill in code into indicated sections.
 """
 from __future__ import absolute_import, division, print_function
 
+import logging
 from typing import List
 
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 class MLP(nn.Module):
@@ -49,15 +52,6 @@ class MLP(nn.Module):
                      output dimensions of the MLP
           use_batch_norm: If True, add a Batch-Normalization layer in between
                           each Linear and ELU layer.
-
-        TODO:
-        Implement module setup of the network. DONE
-        The linear layer have to initialized according to the Kaiming
-        initialization. Add the Batch-Normalization _only_ is use_batch_norm is
-        True. DONE
-
-        Hint: No softmax layer is needed here. Look at the CrossEntropyLoss
-        module for loss calculation.
         """
         super().__init__()
         layers = []
@@ -99,3 +93,11 @@ class MLP(nn.Module):
         situations.
         """
         return next(self.parameters()).device
+
+    def save(self, path: str):
+        torch.save(self.state_dict(), path)
+        logger.info("Model saved to %s", path)
+
+    def load(self, path: str):
+        logger.info("Loading model '%s'...", path)
+        self.load_state_dict(torch.load(path))

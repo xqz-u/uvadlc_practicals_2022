@@ -5,7 +5,10 @@ from torch.utils import tensorboard as tb
 
 import cifar10_utils
 import mlp_pytorch
+import utils as u
 from train_mlp_pytorch import *
+
+u.setup_root_logging(logging.INFO)
 
 classes = (
     "plane",
@@ -93,6 +96,19 @@ cifar10_loader = cifar10_utils.get_dataloader(
 )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = MLP(32 * 32 * 3, [128], 10, use_batch_norm=True).to(device)
+kwargs = {"hidden_dims": [128], "use_batch_norm": False}
+savepath = (
+    f"data/assets/best_model_3072_{'-'.join(map(str, kwargs['hidden_dims']))}"
+    f"_10_batch{'1' if kwargs['use_batch_norm'] else '0'}_{time.time()}.torch"
+)
+model.save(savepath)
+# model = MLP(
+#     32 * 32 * 3,
+#     [128],
+#     10,
+#     use_batch_norm=True,
+#     saved_model_path="data/assets/test_model.torch",
+# ).to(device)
 # xs, labels = next(iter(cifar10_loader["validation"]))
 # preds = model(xs)
 # pred_labels = preds.argmax(1)

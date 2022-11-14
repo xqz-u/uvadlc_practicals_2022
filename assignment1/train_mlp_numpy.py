@@ -36,7 +36,7 @@ import utils as u
 
 def evaluate_model(
     model: mlp.MLP, data_loader: data.DataLoader, num_classes=10, **kwargs
-):
+) -> u.MetricsDict:
     """
     Performs the evaluation of the MLP model on a given dataset.
 
@@ -112,19 +112,12 @@ def train(
     data_dir: str,
     **kwargs,
 ) -> Tuple[mlp.MLP, List[float], float, u.MetricsDict]:
-    """
-    Hint: you can save your best model by deepcopy-ing it.
-    """
-
     # Set the random seeds for reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)
 
     # Loading the dataset
-    cifar10 = cifar10_utils.get_cifar10(data_dir)
-    cifar10_loader = cifar10_utils.get_dataloader(
-        cifar10, batch_size=batch_size, return_numpy=True
-    )
+    cifar10_loader = cifar10_utils.get_data(data_dir, batch_size, True)
 
     model = mlp.MLP(32 * 32 * 3, hidden_dims, kwargs["num_classes"])
     loss_module = m.CrossEntropyModule()

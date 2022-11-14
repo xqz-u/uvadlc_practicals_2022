@@ -17,6 +17,8 @@
 This module implements utility functions for downloading and reading CIFAR10 data.
 You don't need to change anything here.
 """
+from typing import Dict
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, random_split
@@ -121,3 +123,10 @@ def get_cifar10(data_dir="data/", validation_size=5000):
       Dictionary with Train, Validation, Test Datasets
     """
     return read_data_sets(data_dir, validation_size)
+
+
+def get_data(
+    data_dir: str, batch_size: int, return_numpy: bool
+) -> Dict[str, DataLoader]:
+    cifar10 = get_cifar10(data_dir)
+    return get_dataloader(cifar10, batch_size=batch_size, return_numpy=return_numpy)

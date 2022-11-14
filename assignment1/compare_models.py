@@ -17,19 +17,19 @@
 This file implements the execution of different hyperparameter configurations with
 respect to using batch norm or not, and plots the results
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
+
+import os
 
 import numpy as np
-import os
-from mlp_pytorch import MLP
-import cifar10_utils
-import train_mlp_pytorch
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
+import cifar10_utils
+import train_mlp_pytorch
+from mlp_pytorch import MLP
+
 # Hint: you might want to import some plotting libraries or similar
 # You are also allowed to use libraries here which are not in the provided environment.
 
@@ -37,7 +37,7 @@ import torch.optim as optim
 def train_models(results_filename):
     """
     Executes all requested hyperparameter configurations and stores all results in a file.
-    Note that we split the running of the model and the plotting, since you might want to 
+    Note that we split the running of the model and the plotting, since you might want to
     try out different plotting configurations without re-running your models every time.
 
     Args:
@@ -81,9 +81,9 @@ def plot_results(results_filename):
     #######################
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Feel free to change the code below as you need it.
-    FILENAME = 'results.txt' 
+    FILENAME = "results.txt"
     if not os.path.isfile(FILENAME):
         train_models(FILENAME)
     plot_results(FILENAME)
