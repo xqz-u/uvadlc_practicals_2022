@@ -172,4 +172,4 @@ if __name__ == "__main__":
     )
     run_experiments("numpy", [base_conf], "assignment_experiments_numpy")
 
-    # run_experiments("pytorch", confs, "assignment_experiments")
+    run_experiments("pytorch", confs, "assignment_experiments")
