@@ -5,9 +5,6 @@ from typing import Dict, Union
 import numpy as np
 import torch
 
-import mlp_numpy
-import mlp_pytorch
-
 logger = logging.getLogger(__name__)
 
 Metrics = Dict[str, Union[float, np.ndarray, torch.Tensor]]
@@ -131,10 +128,3 @@ def confusion_matrix_to_metrics(
 
 def one_hot(n_classes: int, targets: np.ndarray) -> np.ndarray:
     return np.eye(n_classes)[targets]
-
-
-def load_model(model: Union[mlp_pytorch.MLP, mlp_numpy.MLP], path: str):
-    if isinstance(model, mlp_pytorch.MLP):
-        model.load_state_dict(torch.load(path))
-    else:
-        model.load_state_dict(np.load(path))

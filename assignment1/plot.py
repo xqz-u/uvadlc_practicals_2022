@@ -19,7 +19,7 @@ def savefig(fig: plt.Figure, savepath: str):
     logger.info("Saved plot to '%s'", savepath)
 
 
-def plot_one_experiment(df: pd.Series, savepath: str) -> plt.Axes:
+def plot_one_experiment(df: pd.Series, savepath: str, mlp_type: str) -> plt.Axes:
     fig, axes = plt.subplots(1, 2, figsize=(12, 7))
 
     axes[0].plot(range(len(df["train_loss"])), df["train_loss"])
@@ -29,6 +29,8 @@ def plot_one_experiment(df: pd.Series, savepath: str) -> plt.Axes:
     axes[1].plot(range(len(df["validation_accuracy"])), df["validation_accuracy"])
     axes[1].set_ylabel("Mean accuracy")
     axes[1].set_title("Accuracy")
+
+    fig.suptitle(f"{mlp_type} MLP")
 
     for ax in axes:
         ax.set_xlabel("Epochs")
@@ -51,7 +53,7 @@ def plot_experiments(df: pd.DataFrame, labs: np.ndarray, savepath: str) -> plt.A
     axes[1].set_ylabel("Mean accuracy")
     axes[1].set_title("Accuracy")
 
-    fig.suptitle(f"Learning curves with different learning rates")
+    fig.suptitle("Learning curves with different learning rates")
 
     for ax in axes:
         ax.set_xlabel("Epochs")
@@ -67,7 +69,7 @@ def plot_experiments(df: pd.DataFrame, labs: np.ndarray, savepath: str) -> plt.A
 if __name__ == "__main__":
     data = runner.read_metrics("data/assets/assignment_experiments.csv")
 
-    plot_one_experiment(data.iloc[5], "data/assets/base_plot.png")
+    plot_one_experiment(data.iloc[5], "data/assets/base_plot.png", "PyTorch")
 
     base_conf_mat = np.load("data/assets/confmat_pytorch_mlp_exp_5.npy")
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -94,6 +96,9 @@ if __name__ == "__main__":
         hiddens_experiments["hidden_dims"].to_list(),
         "data/assets/hiddens_plot.png",
     )
+
+    numpy_data = runner.read_metrics("data/assets/assignment_experiments_numpy.csv")
+    plot_one_experiment(numpy_data.iloc[0], "data/assets/base_plot_numpy.png", "NumPy")
 
     # NOTE you can check that the indexed rows from `data` are the
     # ones requested in the assignments by looking at the configs file

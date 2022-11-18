@@ -19,12 +19,16 @@ You should fill in code into indicated sections.
 """
 from __future__ import absolute_import, division, print_function
 
+import logging
+import pickle
 from copy import deepcopy
 from typing import List, Tuple
 
 import numpy as np
 
 import modules as m
+
+logger = logging.getLogger(__name__)
 
 
 class MLP(object):
@@ -104,3 +108,11 @@ class MLP(object):
         for (_, linear), (weight, bias) in zip(self.layers, state_dict):
             linear.params["weight"] = weight
             linear.params["bias"] = bias
+
+    def save(self, path: str):
+        with open(path, "wb") as fd:
+            pickle.dump(self.state_dict(), fd)
+
+    def load(self, path: str):
+        logger.info("Loading model '%s'...", path)
+        self.load_state_dict(np.load(path))

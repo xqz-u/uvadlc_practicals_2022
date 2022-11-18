@@ -9,6 +9,7 @@ import pandas as pd
 from torch import multiprocessing
 from torch.utils import tensorboard as tb
 
+import train_mlp_numpy
 import train_mlp_pytorch
 import utils as u
 
@@ -64,35 +65,40 @@ def dump_metrics(metrics: List[dict], fname: str, configs: List[dict]):
     logger.info("Wrote metrics to %s", fname)
 
 
-def run_pytorch(kwargs: dict) -> u.MetricsDict:
+def run_experiment(model_type: str, kwargs: dict) -> u.MetricsDict:
+    ext, trainer = ".torch", train_mlp_pytorch.train
+    if model_type == "numpy":
+        ext, trainer = ".npy", train_mlp_numpy.train
+
     u.setup_root_logging(logging.DEBUG if kwargs.pop("verbose") else logging.INFO)
-    logger = logging.getLogger("PyTorchTrainer")
     logger.info("Tensorboard logs folder: %s", kwargs["tensorboard_dir"])
     logger.info("Assets folder: %s", kwargs["assets_dir"])
     experiment_name = kwargs["experiment_name"]
-    model, *_, info = train_mlp_pytorch.train(
+    model, *_, info = trainer(
         **kwargs,
         num_classes=10,
         tb_writer=tb.SummaryWriter(kwargs.pop("tensorboard_dir")),
     )
     model_fname = os.path.join(
-        kwargs["assets_dir"], f"best_model_{experiment_name}.torch"
+        kwargs["assets_dir"], f"best_model_{experiment_name}{ext}"
     )
     model.save(model_fname)
     logger.info("Saved best model to %s", model_fname)
-    confmat_fname = os.path.join(kwargs["assets_dir"], f"confmat_{experiment_name}.npy")
+    confmat_fname = os.path.join(
+        kwargs["assets_dir"], f"confmat_{experiment_name}_{model_type}_.npy"
+    )
     np.save(confmat_fname, info.pop("confusion_matrix"))
     logger.info("Saved test confusion matrix to %s", confmat_fname)
     return info
 
 
-def run_experiments(configs: List[dict], outfile: str):
+def run_experiments(model_type: str, configs: List[dict], outfile: str):
     nprocs = multiprocessing.cpu_count()
     if len(configs) < nprocs:
         nprocs = len(configs)
     logger.info("Number of experiments: %d Processes: %d", len(configs), nprocs)
     with multiprocessing.Pool(processes=nprocs) as p:
-        ret = p.map(run_pytorch, configs)
+        ret = p.starmap(run_experiment, zip([model_type] * len(configs), configs))
     logger.info("Dumping metrics...")
     dump_metrics(ret, outfile, configs)
     return ret
@@ -112,6 +118,7 @@ def read_metrics(fname: str) -> pd.DataFrame:
     return df
 
 
+# creates the expriments for the pytorch implementation
 def experiments(fname: str) -> List[dict]:
     ret = []
     conf = {
@@ -155,4 +162,14 @@ def experiments(fname: str) -> List[dict]:
 if __name__ == "__main__":
     u.setup_root_logging()
     confs = experiments("data/experiments_configs.json")
-    run_experiments(confs, "assignment_experiments")
+
+    base_conf = confs[5].copy()
+    base_conf["tensorboard_dir"] = base_conf["tensorboard_dir"].replace(
+        "pytorch", "numpy"
+    )
+    base_conf["experiment_name"] = base_conf["experiment_name"].replace(
+        "pytorch", "numpy"
+    )
+    run_experiments("numpy", [base_conf], "assignment_experiments_numpy")
+
+    # run_experiments("pytorch", confs, "assignment_experiments")

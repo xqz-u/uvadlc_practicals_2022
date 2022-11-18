@@ -30,8 +30,9 @@ from torch.utils import tensorboard as tb
 import cifar10_utils
 import mlp_numpy as mlp
 import modules as m
-import plot as p
 import utils as u
+
+logger = logging.getLogger("NumPyTrainer")
 
 
 def evaluate_model(
@@ -59,7 +60,11 @@ def evaluate_model(
         conf_mat += u.confusion_matrix(predictions, labels)
         datapoints += len(xs)
     metrics = u.confusion_matrix_to_metrics(conf_mat, **kwargs)
-    return {**metrics, f"{mode}_loss": loss / datapoints}
+    return {
+        **metrics,
+        f"{mode}_loss": np.array(loss / datapoints),
+        "confusion_matrix": conf_mat,
+    }
 
 
 def optimize(model: mlp.MLP, lr: float = 0.1, **_):
@@ -174,7 +179,20 @@ def train(
         model,
         val_accuracies,
         test_metrics["accuracy"],
-        {"loss": {"Train": np.array(train_losses), "Validation": np.array(val_losses)}},
+        {
+            "loss": {
+                "Train": np.array(train_losses),
+                "Validation": np.array(val_losses),
+                "Test": np.expand_dims(test_metrics.pop("test_loss"), axis=0),
+            },
+            "accuracy": {
+                "Validation": np.array(val_accuracies),
+                "Test": np.array([test_metrics.pop("accuracy")]),
+                "Train": np.array([-1]),
+            },
+            "confusion_matrix": np.array(test_metrics.pop("confusion_matrix")),
+            **test_metrics,
+        },
     )
 
 
@@ -182,7 +200,6 @@ if __name__ == "__main__":
     kwargs = u.cl_parser()
     kwargs.pop("use_batch_norm")
     u.setup_root_logging(logging.DEBUG if kwargs.pop("verbose") else logging.INFO)
-    logger = logging.getLogger("NumPyTrainer")
     logger.info("Tensorboard logs folder: %s", kwargs["tensorboard_dir"])
     logger.info("Assets folder: %s", kwargs["assets_dir"])
     model, validation_accuracies, test_accuracy, info = train(
@@ -190,41 +207,3 @@ if __name__ == "__main__":
         num_classes=10,
         tb_writer=tb.SummaryWriter(kwargs.pop("tensorboard_dir")),
     )
-    # Feel free to add any additional functions, such as plotting of the loss
-    # curve here
-    p.plot_model_performance(
-        "NumPy", validation_accuracies, info["loss"], savepath=kwargs.pop("assets_dir")
-    )
-
-
-# u.setup_root_logging(logging.DEBUG)
-# logger = logging.getLogger("NumPyTrainer")
-# model, val_accuracies, test_accuracy, info = train(
-#     [256, 128], 0.1, 128, 10, 42, "data", num_classes=10
-# )
-# p.plot_model_performance("NumPy", val_accuracies, info["loss"], savepath="data/assets")
-
-# model = mlp.MLP(32 * 32 * 3, [128, 256], 10)
-# loss_module = m.CrossEntropyModule()
-# # model = mlp.MLP(10, [], 10)
-# # xs, labs = np.random.randint(0, 10, size=(3, 10)), np.random.randint(0, 10, size=(3,))
-# data_dir = "data"
-# batch_size = 128
-# cifar10 = cifar10_utils.get_cifar10(data_dir)
-# cifar10_loader = cifar10_utils.get_dataloader(
-#     cifar10, batch_size=batch_size, return_numpy=True
-# )
-# xs, labs = next(iter(cifar10_loader["train"]))
-# preds = model.forward(xs)
-# # # preds
-# model.input_layer.grads["weight"]
-# loss = loss_module.forward(preds, labs)
-# # # loss
-# loss_grad = loss_module.backward(preds, labs)
-# in_grad = model.backward(loss_grad)
-# # # model.input_layer.params["weight"]
-# # # model.input_layer.grads["weight"]
-
-
-# optimize(model, lr=0.1)
-# model.input_layer.params["weight"]
