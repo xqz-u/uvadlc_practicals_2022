@@ -7,12 +7,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from matplotlib import pyplot as plt
 from torch.utils import data
 from torch.utils import tensorboard as tb
 
 import cifar10_utils
-import plot as p
 import utils as u
 from mlp_pytorch import MLP
 
@@ -189,19 +187,3 @@ if __name__ == "__main__":
         num_classes=10,
         tb_writer=tb.SummaryWriter(kwargs.pop("tensorboard_dir")),
     )
-    # savepath = (
-    #     f"best_model_3072_{'-'.join(map(str, kwargs['hidden_dims']))}"
-    #     f"_10_batch{'1' if kwargs['use_batch_norm'] else '0'}_{time.time()}.torch"
-    # )
-    model.save("data/assets/best_model.torch")
-    # Feel free to add any additional functions, such as plotting of the loss
-    # curve here
-    p.plot_model_performance(
-        "PyTorch",
-        validation_accuracies,
-        info["loss"],
-        savepath=kwargs.pop("assets_dir"),
-    )
-    plt.tight_layout()
-    p.plot_confusion_matrix(info["confusion_matrix"])
-    plt.tight_layout()

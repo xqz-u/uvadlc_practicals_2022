@@ -1,11 +1,12 @@
 import logging
 import os
-import time
 
 import matplotlib
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
+import runner
 import utils as u
 
 logger = logging.getLogger(__name__)
@@ -16,42 +17,6 @@ def savefig(fig: plt.Figure, savepath: str):
     fig.tight_layout()
     plt.savefig(savepath)
     logger.info("Saved plot to '%s'", savepath)
-
-
-def plot_model_performance(
-    mlp_type: str, accuracy: np.ndarray, loss_dict: u.MetricsDict, savepath: str = None
-) -> plt.Axes:
-    fig, axes = plt.subplots(1, 2, figsize=(12, 7))
-
-    losses = np.vstack(list(loss_dict.values()))
-    axes[0].plot(losses.T, label=list(loss_dict.keys()))
-    axes[0].set_ylabel("Mean Cross-Entropy loss")
-    axes[0].set_title("Training loss")
-    # axes[0].set_xlim(0, losses.shape[1])
-    # axes[0].set_ylim(losses.min(), losses.max())
-
-    axes[1].plot(range(len(accuracy)), accuracy, label="Validation")
-    axes[1].set_ylabel("Mean accuracy")
-    axes[1].set_title("Accuracy")
-    # axes[1].set_xlim(0, len(accuracy))
-    # axes[1].set_ylim(0, 1)
-
-    for ax in axes:
-        ax.set_xlabel("Epochs")
-        ax.legend()
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-
-    fig.suptitle(f"{mlp_type} MLP")
-
-    if savepath:
-        if not savepath.endswith(".png"):
-            savepath = os.path.join(
-                savepath,
-                f"{mlp_type}_performance_{str(time.time()).replace('.', '')}.png",
-            )
-        savefig(fig, savepath)
-    return ax
 
 
 # NOTE taken from
@@ -194,3 +159,72 @@ def plot_confusion_matrix(
     if savepath:
         savefig(fig, savepath)
     return ax
+
+
+def plot_one_experiment(df: pd.Series, savepath: str) -> plt.Axes:
+    fig, axes = plt.subplots(1, 2, figsize=(12, 7))
+
+    axes[0].plot(range(len(df["train_loss"])), df["train_loss"])
+    axes[0].set_ylabel("Mean Cross-Entropy loss")
+    axes[0].set_title("Training loss")
+
+    axes[1].plot(range(len(df["validation_accuracy"])), df["validation_accuracy"])
+    axes[1].set_ylabel("Mean accuracy")
+    axes[1].set_title("Accuracy")
+
+    for ax in axes:
+        ax.set_xlabel("Epochs")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+    if savepath:
+        savefig(fig, savepath)
+    return ax
+
+
+def plot_experiments(df: pd.DataFrame, labs: np.ndarray, savepath: str) -> plt.Axes:
+    fig, axes = plt.subplots(1, 2, figsize=(12, 7))
+
+    axes[0].plot(np.vstack(df["train_loss"]).T, label=labs)
+    axes[0].set_ylabel("Mean Cross-Entropy loss")
+    axes[0].set_title("Training loss")
+
+    axes[1].plot(np.vstack(df["validation_accuracy"]).T, label=labs)
+    axes[1].set_ylabel("Mean accuracy")
+    axes[1].set_title("Accuracy")
+
+    fig.suptitle(f"Learning curves with different learning rates")
+
+    for ax in axes:
+        ax.set_xlabel("Epochs")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.legend()
+
+    if savepath:
+        savefig(fig, savepath)
+    return ax
+
+
+if __name__ == "__main__":
+    data = runner.read_metrics("data/assets/assignment_experiments.csv")
+
+    plot_one_experiment(data.iloc[5], "data/assets/base_plot.png")
+
+    lr_experiments = data.iloc[list(range(9))]
+    plot_experiments(
+        lr_experiments, lr_experiments["lr"].to_list(), "data/assets/lr_plot.png"
+    )
+
+    hiddens_experiments = data.iloc[list(range(9, 12))]
+    plot_experiments(
+        hiddens_experiments,
+        hiddens_experiments["hidden_dims"].to_list(),
+        "data/assets/hiddens_plot.png",
+    )
+
+    # NOTE you can check that the indexed rows from `data` are the
+    # ones requested in the assignments by looking at the configs file
+    # import json
+    # with open("data/experiments_configs.json") as fd:
+    #     confs = json.load(fd)

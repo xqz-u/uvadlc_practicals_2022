@@ -1,4 +1,3 @@
-import ast
 import csv
 import json
 import logging
@@ -99,14 +98,17 @@ def run_experiments(configs: List[dict], outfile: str):
     return ret
 
 
+def parse_np_array(x: str, dtype: str = "float64") -> np.ndarray:
+    return np.fromstring(x.strip("[]"), sep=",").astype(dtype)
+
+
 def read_metrics(fname: str) -> pd.DataFrame:
     df = pd.read_csv(fname)
     phases = {"Train", "Validation", "Test"}
     metrics_names = {"loss", "accuracy"}
     array_columns = [f"{p.lower()}_{m}" for m in metrics_names for p in phases]
-    # NOTE vectorized apply does not work simply with ast.literal_eval
-    for col in array_columns:
-        df[col] = df[col].apply(lambda x: np.array(ast.literal_eval(x)))
+    df[array_columns] = df[array_columns].apply(lambda col: col.apply(parse_np_array))
+    df["hidden_dims"] = df["hidden_dims"].apply(lambda x: parse_np_array(x, "int64"))
     return df
 
 
@@ -125,13 +127,8 @@ def experiments(fname: str) -> List[dict]:
         "verbose": False,
         "experiment_name": "pytorch_mlp_exp",
     }
-    # change beta values
-    for i, beta in enumerate([0.1, 1, 10]):
-        c = conf.copy()
-        c["beta"] = beta
-        ret.append(c)
     # different learning rates
-    for i, lr_exp in enumerate(np.arange(-6.0, 3.0), start=i + 1):
+    for i, lr_exp in enumerate(np.arange(-6.0, 3.0)):
         c = conf.copy()
         c["lr"] = 10**lr_exp
         ret.append(c)
@@ -155,8 +152,7 @@ def experiments(fname: str) -> List[dict]:
     return ret
 
 
-u.setup_root_logging()
-
-confs = experiments("data/experiments_configs.json")
-
-run_experiments(confs, "test_experiment")
+if __name__ == "__main__":
+    u.setup_root_logging()
+    confs = experiments("data/experiments_configs.json")
+    run_experiments(confs, "assignment_experiments")
