@@ -70,6 +70,7 @@ if __name__ == "__main__":
     plot_one_experiment(data.iloc[5], "data/assets/base_plot.png")
 
     base_conf_mat = np.load("data/assets/confmat_pytorch_mlp_exp_5.npy")
+    fig, ax = plt.subplots(figsize=(12, 10))
     sns.heatmap(
         base_conf_mat,
         annot=True,
@@ -77,9 +78,10 @@ if __name__ == "__main__":
         xticklabels=u.classes_names,
         yticklabels=u.classes_names,
         cmap=sns.cm.rocket_r,
+        ax=ax,
     )
-    plt.title("Confusion matrix")
-    plt.savefig("data/assets/conf_mat_sns.png")
+    ax.set_title("Confusion matrix")
+    savefig(fig, "data/assets/conf_mat_sns.png")
 
     lr_experiments = data.iloc[list(range(9))]
     plot_experiments(
