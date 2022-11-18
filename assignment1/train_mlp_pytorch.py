@@ -16,6 +16,8 @@ import plot as p
 import utils as u
 from mlp_pytorch import MLP
 
+logger = logging.getLogger("PyTorchTrainer")
+
 
 def evaluate_model(
     model: nn.Module,
@@ -35,7 +37,11 @@ def evaluate_model(
             conf_mat += u.confusion_matrix(predictions, labels)
             datapoints += len(xs)
         metrics = u.confusion_matrix_to_metrics(conf_mat, **kwargs)
-    return {**metrics, f"{mode}_loss": loss / datapoints, "confusion_matrix": conf_mat}
+    return {
+        **metrics,
+        f"{mode}_loss": np.array(loss / datapoints),
+        "confusion_matrix": conf_mat,
+    }
 
 
 def train_one_epoch(
@@ -159,8 +165,15 @@ def train(
             "loss": {
                 "Train": np.array(train_losses),
                 "Validation": np.array(val_losses),
+                "Test": np.expand_dims(test_metrics.pop("test_loss"), axis=0),
             },
-            "confusion_matrix": test_metrics.pop("confusion_matrix"),
+            "accuracy": {
+                "Validation": np.array(val_accuracies),
+                "Test": np.array([test_metrics.pop("accuracy")]),
+                "Train": np.array([-1]),
+            },
+            "confusion_matrix": np.array(test_metrics.pop("confusion_matrix")),
+            **test_metrics,
         },
     )
 
@@ -169,7 +182,6 @@ if __name__ == "__main__":
     # Command line arguments
     kwargs = u.cl_parser()
     u.setup_root_logging(logging.DEBUG if kwargs.pop("verbose") else logging.INFO)
-    logger = logging.getLogger("PyTorchTrainer")
     logger.info("Tensorboard logs folder: %s", kwargs["tensorboard_dir"])
     logger.info("Assets folder: %s", kwargs["assets_dir"])
     model, validation_accuracies, test_accuracy, info = train(
@@ -193,16 +205,3 @@ if __name__ == "__main__":
     plt.tight_layout()
     p.plot_confusion_matrix(info["confusion_matrix"])
     plt.tight_layout()
-
-# kwargs = {
-#     "data_dir": "data/",
-#     "hidden_dims": [128],
-#     "lr": 0.1,
-#     "use_batch_norm": True,
-#     "batch_size": 128,
-#     "epochs": 10,
-#     "seed": 42,
-#     "tensorboard_dir": "",
-#     "assets_dir": "data/assets",
-#     "verbose": False,
-# }

@@ -1,4 +1,5 @@
 **/.xqz-u-egg
 **/__pycache__
 
-assignment1/data
+assignment1/data/*
+!assignment1/data/experiments_configs.json

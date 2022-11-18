@@ -83,7 +83,7 @@ def cl_parser() -> dict:
 def setup_root_logging(level: int = logging.INFO):
     logging.basicConfig(
         level=level,
-        format="[%(asctime)s] [%(levelname)s]  %(message)s  (%(name)s:%(lineno)s)",
+        format="p%(process)s [%(asctime)s] [%(levelname)s]  %(message)s  (%(name)s:%(lineno)s)",
         datefmt="%y-%m-%d %H:%M",
     )
 
@@ -108,45 +108,24 @@ def confusion_matrix(predictions: np.ndarray, targets: np.ndarray) -> np.ndarray
     return conf_mat
 
 
-def get_true_negatives(conf_mat: np.ndarray) -> np.ndarray:
-    return np.array(
-        [np.delete(np.delete(conf_mat, i, 0), i, 1).sum() for i in range(len(conf_mat))]
-    )
-
-
-# false positives: sum along rows
-# false negatives: sum along columns
-def get_false_predictions(conf_mat: np.ndarray, mode: str):
-    return np.sum(conf_mat - np.diag(np.diag(conf_mat)), int(mode == "neg"))
-
-
 def confusion_matrix_to_metrics(
     confusion_matrix: np.ndarray, beta: float = 1.0, **_
 ) -> MetricsDict:
     true_pos = np.diag(confusion_matrix)
-    # true_neg = get_true_negatives(confusion_matrix)
     col_sums = confusion_matrix.sum(0)
     row_sums = confusion_matrix.sum(1)
     precision = true_pos / col_sums
     recall = true_pos / row_sums
     beta_squared = beta**2
+    f1_beta = (
+        (1 + beta_squared) * precision * recall / (beta_squared * precision + recall)
+    )
     return {
-        # "accuracy": np.mean(
-        #     (true_pos + true_neg)
-        #     / (
-        #         true_pos
-        #         + true_neg
-        #         + get_false_predictions(confusion_matrix, "pos")
-        #         + get_false_predictions(confusion_matrix, "neg")
-        #     )
-        # ),
         "accuracy": true_pos.sum() / col_sums.sum(),
-        "precision": precision,
-        "recall": recall,
-        "f1_beta": (1 + beta_squared)
-        * precision
-        * recall
-        / (beta_squared * precision + recall),
+        "precision": np.array(precision),
+        "recall": np.array(recall),
+        "f1_beta": np.array(f1_beta),
+        "beta": beta,
     }
 
 
