@@ -6,7 +6,6 @@ import pandas as pd
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-import runner
 import utils as u
 
 logger = logging.getLogger(__name__)
@@ -17,6 +16,21 @@ def savefig(fig: plt.Figure, savepath: str):
     fig.tight_layout()
     plt.savefig(savepath)
     logger.info("Saved plot to '%s'", savepath)
+
+
+def parse_np_array(x: str, dtype: str = "float64") -> np.ndarray:
+    return np.fromstring(x.strip("[]"), sep=",").astype(dtype)
+
+
+def read_metrics(fname: str) -> pd.DataFrame:
+    df = pd.read_csv(fname)
+    phases = {"Train", "Validation", "Test"}
+    metrics_names = {"loss", "accuracy"}
+    array_columns = [f"{p.lower()}_{m}" for m in metrics_names for p in phases]
+    array_columns += ["precision", "recall", "f1_beta"]
+    df[array_columns] = df[array_columns].apply(lambda col: col.apply(parse_np_array))
+    df["hidden_dims"] = df["hidden_dims"].apply(lambda x: parse_np_array(x, "int64"))
+    return df
 
 
 def plot_one_experiment(df: pd.Series, savepath: str, mlp_type: str) -> plt.Axes:
@@ -67,9 +81,15 @@ def plot_experiments(df: pd.DataFrame, labs: np.ndarray, savepath: str) -> plt.A
 
 
 if __name__ == "__main__":
-    data = runner.read_metrics("data/assets/assignment_experiments.csv")
+    data = read_metrics("data/assets/assignment_experiments.csv")
+    base_model = data.iloc[5]
 
-    plot_one_experiment(data.iloc[5], "data/assets/base_plot.png", "PyTorch")
+    for b in [0.1, 1, 10]:
+        logger.info(
+            f"beta: {b} f1 score: {u.f1_beta_score(base_model.precision, base_model.recall, b)}"
+        )
+
+    plot_one_experiment(base_model, "data/assets/base_plot.png", "PyTorch")
 
     base_conf_mat = np.load("data/assets/confmat_pytorch_mlp_exp_5.npy")
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -97,7 +117,7 @@ if __name__ == "__main__":
         "data/assets/hiddens_plot.png",
     )
 
-    numpy_data = runner.read_metrics("data/assets/assignment_experiments_numpy.csv")
+    numpy_data = read_metrics("data/assets/assignment_experiments_numpy.csv")
     plot_one_experiment(numpy_data.iloc[0], "data/assets/base_plot_numpy.png", "NumPy")
 
     # NOTE you can check that the indexed rows from `data` are the

@@ -5,7 +5,6 @@ import os
 from typing import List
 
 import numpy as np
-import pandas as pd
 from torch import multiprocessing
 from torch.utils import tensorboard as tb
 
@@ -102,20 +101,6 @@ def run_experiments(model_type: str, configs: List[dict], outfile: str):
     logger.info("Dumping metrics...")
     dump_metrics(ret, outfile, configs)
     return ret
-
-
-def parse_np_array(x: str, dtype: str = "float64") -> np.ndarray:
-    return np.fromstring(x.strip("[]"), sep=",").astype(dtype)
-
-
-def read_metrics(fname: str) -> pd.DataFrame:
-    df = pd.read_csv(fname)
-    phases = {"Train", "Validation", "Test"}
-    metrics_names = {"loss", "accuracy"}
-    array_columns = [f"{p.lower()}_{m}" for m in metrics_names for p in phases]
-    df[array_columns] = df[array_columns].apply(lambda col: col.apply(parse_np_array))
-    df["hidden_dims"] = df["hidden_dims"].apply(lambda x: parse_np_array(x, "int64"))
-    return df
 
 
 # creates the expriments for the pytorch implementation

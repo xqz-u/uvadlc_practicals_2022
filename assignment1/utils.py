@@ -105,6 +105,11 @@ def confusion_matrix(predictions: np.ndarray, targets: np.ndarray) -> np.ndarray
     return conf_mat
 
 
+def f1_beta_score(precision, recall, beta) -> np.ndarray:
+    beta_squared = beta**2
+    return (1 + beta_squared) * precision * recall / (beta_squared * precision + recall)
+
+
 def confusion_matrix_to_metrics(
     confusion_matrix: np.ndarray, beta: float = 1.0, **_
 ) -> MetricsDict:
@@ -113,15 +118,11 @@ def confusion_matrix_to_metrics(
     row_sums = confusion_matrix.sum(1)
     precision = true_pos / col_sums
     recall = true_pos / row_sums
-    beta_squared = beta**2
-    f1_beta = (
-        (1 + beta_squared) * precision * recall / (beta_squared * precision + recall)
-    )
     return {
         "accuracy": true_pos.sum() / col_sums.sum(),
         "precision": np.array(precision),
         "recall": np.array(recall),
-        "f1_beta": np.array(f1_beta),
+        "f1_beta": f1_beta_score(precision, recall, beta),
         "beta": beta,
     }
 
