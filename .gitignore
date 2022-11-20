@@ -1,5 +1,10 @@
 **/.xqz-u-egg
 **/__pycache__
+**/*.aux
+**/*.log
+**/*.out
+**/*.png
+**/*.zip
 
 assignment1/data/*
 !assignment1/data/experiments_configs.json
