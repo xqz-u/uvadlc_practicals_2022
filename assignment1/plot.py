@@ -33,7 +33,7 @@ def read_metrics(fname: str) -> pd.DataFrame:
     return df
 
 
-def plot_one_experiment(df: pd.Series, savepath: str, mlp_type: str) -> plt.Axes:
+def plot_one_experiment(df: pd.Series, mlp_type: str, savepath: str) -> plt.Axes:
     fig, axes = plt.subplots(1, 2, figsize=(12, 7))
 
     axes[0].plot(range(len(df["train_loss"])), df["train_loss"])
@@ -56,7 +56,9 @@ def plot_one_experiment(df: pd.Series, savepath: str, mlp_type: str) -> plt.Axes
     return ax
 
 
-def plot_experiments(df: pd.DataFrame, labs: np.ndarray, savepath: str) -> plt.Axes:
+def plot_experiments(
+    df: pd.DataFrame, labs: np.ndarray, savepath: str = None
+) -> plt.Axes:
     fig, axes = plt.subplots(1, 2, figsize=(12, 7))
 
     axes[0].plot(np.vstack(df["train_loss"]).T, label=labs)
@@ -89,7 +91,7 @@ if __name__ == "__main__":
             f"beta: {b} f1 score: {u.f1_beta_score(base_model.precision, base_model.recall, b)}"
         )
 
-    plot_one_experiment(base_model, "data/assets/base_plot.png", "PyTorch")
+    plot_one_experiment(base_model, "PyTorch", "data/assets/base_plot.png")
 
     base_conf_mat = np.load("data/assets/confmat_pytorch_mlp_exp_5.npy")
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -118,7 +120,7 @@ if __name__ == "__main__":
     )
 
     numpy_data = read_metrics("data/assets/assignment_experiments_numpy.csv")
-    plot_one_experiment(numpy_data.iloc[0], "data/assets/base_plot_numpy.png", "NumPy")
+    plot_one_experiment(numpy_data.iloc[0], "NumPy", "data/assets/base_plot_numpy.png")
 
     # NOTE you can check that the indexed rows from `data` are the
     # ones requested in the assignments by looking at the configs file

@@ -211,4 +211,24 @@
 \end{align*}
 \end{enumerate}
 
+\section*{Question 2}
+
+\begin{enumerate}[label=2\alph*]
+\item
+  Given the derivative from question 1f, we can substitute it into 1e
+  to get
+  \begin{align*}
+    \frac{\partial L}{\partial \mathbf{Z}} &= \mathbf{Y}\odot{\Big(-\frac{1}{S}\mathbf{T} \oslash
+                               \mathbf{Y}-\Big(-\frac{1}{S}\mathbf{T} \oslash
+                               \mathbf{Y}\odot\mathbf{Y}\Big)\mathbf{1}\mathbf{1}^T\Big)}\\
+    &=
+      -\frac{1}{S}\mathbf{Y}\oslash\mathbf{Y}\odot(\mathbf{T}-(\mathbf{T}\odot\mathbf{Y})\mathbf{1}\mathbf{1}^T)\\
+    &=
+      -\frac{1}{S}\odot(\mathbf{T}-(\mathbf{T}\odot\mathbf{Y})\mathbf{1}\mathbf{1}^T),
+  \end{align*}
+  resulting in $\alpha=\frac{1}{S}$ and
+  $\mathbf{M}=(\mathbf{T}\odot\mathbf{Y})\mathbf{1}\mathbf{1}^T-\mathbf{T}$.
+
+\end{enumerate}
+
 \end{document}
