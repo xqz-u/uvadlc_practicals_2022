@@ -20,6 +20,7 @@ import argparse
 import os
 import time
 from pprint import pprint
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -272,15 +273,57 @@ def visualize_predictions(images, logits, classnames, fig_file):
     plt.savefig(fig_file)
 
 
+def random_images(n, dataset) -> Tuple[torch.Tensor, torch.Tensor]:
+    idx = np.random.choice(len(dataset), n, replace=False)
+    datapoints = (dataset[i] for i in idx)
+    images, labels = zip(*datapoints)
+    return torch.stack(images), torch.tensor(labels)
+
+
+def q3b():
+    args = parse_option()
+
+    assert args.class_names is not None
+    if args.dataset.endswith("10"):
+        print("Using CIFAR100 dataset")
+        args.dataset = "cifar100"
+    args.visualize_predictions = True
+    args.num_workers = 1
+    pprint(vars(args))
+
+    device = args.device
+    set_seed(args.seed)
+
+    _, preprocess = clip.load(args.arch)
+    dataset = load_dataset(args.dataset, args.root, args.split, preprocess)
+
+    print("Using prompt template:", args.prompt_template)
+    clipzs = ZeroshotCLIP(args=args, dataset=dataset, template=args.prompt_template)
+
+    images, _ = random_images(8, dataset)
+    logits = clipzs.model_inference(images.to(device))
+
+    assets_dir_path = "./data/assets"
+    os.makedirs(assets_dir_path, exist_ok=True)
+    c_names = "_".join(args.class_names)
+    prompt_fmt = "_".join(args.prompt_template.split(" "))
+    fig_file = os.path.join(
+        assets_dir_path, f"{args.dataset}-{args.split}_{c_names}_{prompt_fmt}.png"
+    )
+    visualize_predictions(images, logits, clipzs.class_names, fig_file)
+    print(f"Saved visualization to {fig_file}")
+
+
 def main():
     # Part 0.0: Read options from command line & fix seed
     args = parse_option()
-    pprint(vars(args))
     device = args.device
     set_seed(args.seed)
 
     # Part 0.1: set number of workers to max the number of CPU cores
     args.num_workers = min(args.num_workers, os.cpu_count())
+
+    pprint(vars(args))
 
     # Part 1. Load dataset and create dataloader
     # NOTE model downloads by default in ~/.cache/clip
@@ -300,11 +343,8 @@ def main():
 
     # Part 3. (Optional) Visualize predictions
     if args.visualize_predictions:
-        num_viz = 8
-        idx = np.random.choice(len(dataset), num_viz, replace=False)
-        images = [dataset[i][0] for i in idx]
-        images = torch.stack(images).to(device)
-        logits = clipzs.model_inference(images)
+        images, _ = random_images(8, dataset)
+        logits = clipzs.model_inference(images.to(device))
 
         assets_dir_path = "./data/assets"
         os.makedirs(assets_dir_path, exist_ok=True)
@@ -313,6 +353,7 @@ def main():
             assets_dir_path, f"{args.dataset}-{args.split}_{c_names}.png"
         )
         visualize_predictions(images, logits, clipzs.class_names, fig_file)
+        print(f"Saved visualization to {fig_file}")
 
     if args.class_names is not None:
         # No point in running evaluation if we don't use the dataset's class
@@ -342,6 +383,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # q3b()
 
 
 # class dotdict(dict):
