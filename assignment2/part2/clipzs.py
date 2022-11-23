@@ -15,21 +15,22 @@
 ################################################################################
 
 """Zero-shot CLIP evaluation based on text-prompting."""
-import os
+
 import argparse
+import os
+import time
 from pprint import pprint
+
 import matplotlib.pyplot as plt
-
-import torch
 import numpy as np
-from clip import clip
-
-from torchvision.datasets import CIFAR10, CIFAR100
-from torch.utils.data import DataLoader
-from tqdm import tqdm
+import torch
 import torch.nn as nn
-from utils import AverageMeter, set_seed
+from clip import clip
+from torch.utils.data import DataLoader
+from torchvision.datasets import CIFAR10, CIFAR100
+from tqdm import tqdm
 
+from utils import AverageMeter, set_seed
 
 DATASET = {"cifar10": CIFAR10, "cifar100": CIFAR100}
 
@@ -130,13 +131,12 @@ class ZeroshotCLIP(nn.Module):
 
         print("Precomputing text features")
         text_features = self.precompute_text_features(clip_model, prompts, args.device)
-
         self.class_names = classnames
         self.text_features = text_features
         self.clip_model = clip_model
         self.logit_scale = self.clip_model.logit_scale.exp().detach()
 
-    def precompute_text_features(self, clip_model, prompts, device):
+    def precompute_text_features(self, clip_model, prompts, device) -> torch.Tensor:
         """
         Precomputes text features for the given prompts.
 
@@ -148,73 +148,34 @@ class ZeroshotCLIP(nn.Module):
         Returns:
             torch.Tensor: text features of shape (num_prompts, 512)
 
-        Note: Do not forget to set torch.no_grad() while computing the text features.
+        Note: Do not forget to set torch.no_grad() while computing the text
+        features.
         """
+        text_tokens = clip.tokenize(prompts).to(device)
+        with torch.no_grad():
+            text_embeddings = clip_model.encode_text(text_tokens)
+        text_embeddings /= text_embeddings.norm(dim=0)
+        return text_embeddings
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-
-        # TODO: Implement the precompute_text_features function.
-
-        # Instructions:
-        # - Given a list of prompts, compute the text features for each prompt.
-
-        # Steps:
-        # - Tokenize each text prompt using CLIP's tokenizer.
-        # - Compute the text features (encodings) for each prompt.
-        # - Normalize the text features.
-        # - Return a tensor of shape (num_prompts, 512).
-
-        # Hint:
-        # - Read the CLIP API documentation for more details:
-        #   https://github.com/openai/CLIP#api
-
-        # remove this line once you implement the function
-        raise NotImplementedError("Implement the precompute_text_features function.")
-
-        #######################
-        # END OF YOUR CODE    #
-        #######################
-
-    def model_inference(self, image):
+    def model_inference(self, images) -> torch.Tensor:
         """
-        Performs inference on a single image.
+        Performs inference on a batch of images.
 
         Args:
-            image (torch.Tensor): image tensor of shape (3, 224, 224)
+            images (torch.Tensor): image tensor of shape
+            (batch_size, 3, 224, 224)
 
         Returns:
-            logits (torch.Tensor): logits of shape (num_classes,)
+            logits (torch.Tensor): logits of shape (batch_sizee, num_classes)
         """
-
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-
-        # TODO: Implement the model_inference function.
-
-        # Instructions:
-        # - Given an image, perform the forward pass of the CLIP model,
-        #   i.e., compute the logits w.r.t. each of the prompts defined earlier.
-
-        # Steps:
-        # - Compute the image features (encodings) using the CLIP model.
-        # - Normalize the image features.
-        # - Compute similarity logits between the image features and the text features.
-        #   You need to multiply the similarity logits with the logit scale (clip_model.logit_scale).
-        # - Return logits of shape (num_classes,).
-
-        # Hint:
-        # - Read the CLIP API documentation for more details:
-        #   https://github.com/openai/CLIP#api
-
-        # remove this line once you implement the function
-        raise NotImplementedError("Implement the model_inference function.")
-
-        #######################
-        # END OF YOUR CODE    #
-        #######################
+        images = images.to(self.device)
+        with torch.no_grad():
+            image_embeddings = self.clip_model.encode_image(images)
+            image_embeddings /= image_embeddings.norm(dim=-1, keepdim=True)
+            similarity = (
+                self.clip_model.logit_scale * image_embeddings @ self.text_features.T
+            )
+        return similarity
 
     def load_clip_to_cpu(self, args):
         """Loads CLIP model to CPU."""
@@ -315,6 +276,7 @@ def visualize_predictions(images, logits, classnames, fig_file):
 def main():
     # Part 0.0: Read options from command line & fix seed
     args = parse_option()
+    pprint(vars(args))
     device = args.device
     set_seed(args.seed)
 
@@ -322,6 +284,7 @@ def main():
     args.num_workers = min(args.num_workers, os.cpu_count())
 
     # Part 1. Load dataset and create dataloader
+    # NOTE model downloads by default in ~/.cache/clip
     _, preprocess = clip.load(args.arch)
     dataset = load_dataset(args.dataset, args.root, args.split, preprocess)
 
@@ -344,39 +307,30 @@ def main():
         images = torch.stack(images).to(device)
         logits = clipzs.model_inference(images)
 
-        c_names = ",".join(args.class_names) if args.class_names else "default"
+        c_names = "_".join(args.class_names) if args.class_names else "default"
         fig_file = f"{args.dataset}-{args.split}_{c_names}.png"
         visualize_predictions(images, logits, clipzs.class_names, fig_file)
 
     if args.class_names is not None:
-        # No point in running evaluation if we don't use the dataset's class names
+        # No point in running evaluation if we don't use the dataset's class
+        # names
         return
 
     # Part 4. Inference loop
     print(f"Iterating over {args.split} set of {args.dataset}")
 
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
-
-    # TODO: Implement the inference loop
-
-    # Steps:
-    # - Iterate over the dataloader
-    # - For each image in the batch, get the predicted class
-    # - Update the accuracy meter
-
-    # Hints:
-    # - Before filling this part, you should first complete the ZeroShotCLIP class
-    # - Updating the accuracy meter is as simple as calling top1.update(accuracy, batch_size)
-    # - You can use the model_inference method of the ZeroshotCLIP class to get the logits
-
-    # you can remove the following line once you have implemented the inference loop
-    raise NotImplementedError("Implement the inference loop")
-
-    #######################
-    # END OF YOUR CODE    #
-    #######################
+    batch_size = loader.batch_size
+    print(f"Batch size: {batch_size}")
+    pred_time = 0.0
+    for i, (batch, labels) in tqdm(enumerate(loader, 1)):
+        start = time.time()
+        predictions = clipzs.model_inference(batch).argmax(1)
+        pred_time += time.time() - start
+        accuracy = sum(predictions == labels) / batch_size
+        top1.update(accuracy, batch_size)
+        if i == 10:
+            break
+    print(f"Mean prediction time batch size {batch_size}: {pred_time / i}")
 
     print(
         f"Zero-shot CLIP top-1 accuracy on {args.dataset}/{args.split}: {top1.val*100}"
@@ -385,3 +339,35 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# class dotdict(dict):
+#     """dot.notation access to dictionary attributes"""
+
+#     __getattr__ = dict.get
+#     __setattr__ = dict.__setitem__
+#     __delattr__ = dict.__delitem__
+
+
+# args = dotdict(
+#     {
+#         "seed": 42,
+#         "num_workers": 1,
+#         "arch": "ViT-B/32",
+#         "dataset": "cifar10",
+#         "root": "./data",
+#         "batch_size": 32,
+#         "prompt_template": "This is a photo of a {}",
+#         "split": "train",
+#         "device": "cpu",
+#     }
+# )
+
+
+# # values, indices = similarity.topk(5)
+# # values, indices = similarity.softmax(dim=-1).topk(5)
+
+# # # Print the result
+# # print("\nTop predictions:\n")
+# # for value, index in zip(values, indices):
+# #     print(f"{clipzs.class_names[index]:>16s}: {value.item():.2f}%")

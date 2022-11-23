@@ -15,10 +15,13 @@
 ################################################################################
 
 """Helper functions for training and testing."""
+
 import os
-import torch
-import numpy as np
 import shutil
+
+import numpy as np
+import torch
+from matplotlib import pyplot as plt
 
 
 def set_seed(seed):
@@ -83,7 +86,10 @@ def cosine_lr(optimizer, base_lr, warmup_length, steps):
 
 
 def accuracy(output, target, topk=(1,)):
-    """Computes the accuracy over the k top predictions for the specified values of k"""
+    """
+    Computes the accuracy over the k top predictions for the specified
+    values of k.
+    """
     with torch.no_grad():
         maxk = max(topk)
         batch_size = target.size(0)
@@ -123,3 +129,13 @@ def save_checkpoint(state, args, is_best=False, filename="checkpoint.pth.tar"):
     if is_best:
         shutil.copyfile(savefile, bestfile)
         print("saved best file")
+
+
+def show_rgb_img(im, T=True):
+    if T:
+        im = np.transpose(im, (1, 2, 0))
+    w, h, _ = im.shape
+    im = im.numpy().reshape(-1, 3)
+    im = (im - im.min(0)) / (im.max(0) - im.min(0))
+    im = im.reshape((w, h, 3))
+    plt.imshow(im)
