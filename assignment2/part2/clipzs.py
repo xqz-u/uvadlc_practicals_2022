@@ -168,7 +168,6 @@ class ZeroshotCLIP(nn.Module):
         Returns:
             logits (torch.Tensor): logits of shape (batch_sizee, num_classes)
         """
-        images = images.to(self.device)
         with torch.no_grad():
             image_embeddings = self.clip_model.encode_image(images)
             image_embeddings /= image_embeddings.norm(dim=-1, keepdim=True)
@@ -322,14 +321,14 @@ def main():
     batch_size = loader.batch_size
     print(f"Batch size: {batch_size}")
     pred_time = 0.0
-    for i, (batch, labels) in tqdm(enumerate(loader, 1)):
+    # for i, (batch, labels) in tqdm(enumerate(loader, 1)):
+    for i, (batch, labels) in enumerate(loader, 1):
+        batch, labels = batch.to(device), labels.to(device)
         start = time.time()
         predictions = clipzs.model_inference(batch).argmax(1)
         pred_time += time.time() - start
         accuracy = sum(predictions == labels) / batch_size
         top1.update(accuracy, batch_size)
-        if i == 10:
-            break
     print(f"Mean prediction time batch size {batch_size}: {pred_time / i}")
 
     print(
@@ -362,12 +361,3 @@ if __name__ == "__main__":
 #         "device": "cpu",
 #     }
 # )
-
-
-# # values, indices = similarity.topk(5)
-# # values, indices = similarity.softmax(dim=-1).topk(5)
-
-# # # Print the result
-# # print("\nTop predictions:\n")
-# # for value, index in zip(values, indices):
-# #     print(f"{clipzs.class_names[index]:>16s}: {value.item():.2f}%")
