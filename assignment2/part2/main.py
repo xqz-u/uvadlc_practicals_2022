@@ -15,9 +15,12 @@
 ################################################################################
 
 """Main driver script to run the code."""
-import os
+
 import argparse
+import os
+
 import torch
+
 from learner import Learner
 
 
@@ -67,7 +70,9 @@ def parse_option():
         "--prompt_size", type=int, default=30, help="size for visual prompts"
     )
     parser.add_argument(
-        "--text_prompt_template", type=str, default="This is a photo of a {}",
+        "--text_prompt_template",
+        type=str,
+        default="This is a photo of a {}",
     )
     parser.add_argument(
         "--visualize_prompt",
@@ -80,7 +85,9 @@ def parse_option():
     parser.add_argument("--dataset", type=str, default="cifar100", help="dataset")
     parser.add_argument("--image_size", type=int, default=224, help="image size")
     parser.add_argument(
-        "--test_noise", default=False, action="store_true",
+        "--test_noise",
+        default=False,
+        action="store_true",
         help="whether to add noise to the test images",
     )
 

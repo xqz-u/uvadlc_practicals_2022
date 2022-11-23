@@ -15,9 +15,10 @@
 ################################################################################
 
 """Defines various kinds of visual-prompting modules for images."""
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 
 
 class PadPrompter(nn.Module):
@@ -25,6 +26,7 @@ class PadPrompter(nn.Module):
     Defines visual-prompt as a parametric padding over an image.
     For refernece, this prompt should look like Fig 2(c) in the PDF.
     """
+
     def __init__(self, args):
         super(PadPrompter, self).__init__()
         pad_size = args.prompt_size
@@ -34,13 +36,18 @@ class PadPrompter(nn.Module):
         # PUT YOUR CODE HERE  #
         #######################
 
-        # TODO: Define the padding as variables self.pad_left, self.pad_right, self.pad_up, self.pad_down
+        # TODO: Define the padding as variables self.pad_left, self.pad_right,
+        # self.pad_up, self.pad_down
 
         # Hints:
-        # - Each of these are parameters that we need to learn. So how would you define them in torch?
-        # - See Fig 2(c) in the assignment to get a sense of how each of these should look like.
-        # - Shape of self.pad_up and self.pad_down should be (1, 3, pad_size, image_size)
-        # - See Fig 2.(g)/(h) and think about the shape of self.pad_left and self.pad_right
+        # - Each of these are parameters that we need to learn. So how would
+        #   you define them in torch?
+        # - See Fig 2(c) in the assignment to get a sense of how each of these
+        #   should look like.
+        # - Shape of self.pad_up and self.pad_down should be (1, 3, pad_size,
+        #   image_size)
+        # - See Fig 2.(g)/(h) and think about the shape of self.pad_left and
+        #   self.pad_right
 
         raise NotImplementedError
         #######################
@@ -67,8 +74,9 @@ class PadPrompter(nn.Module):
 class FixedPatchPrompter(nn.Module):
     """
     Defines visual-prompt as a fixed patch over an image.
-    For refernece, this prompt should look like Fig 2(a) in the PDF.
+    For reference, this prompt should look like Fig 2(a) in the PDF.
     """
+
     def __init__(self, args):
         super(FixedPatchPrompter, self).__init__()
 
@@ -114,8 +122,9 @@ class FixedPatchPrompter(nn.Module):
 class RandomPatchPrompter(nn.Module):
     """
     Defines visual-prompt as a random patch in the image.
-    For refernece, this prompt should look like Fig 2(b) in the PDF.
+    For reference, this prompt should look like Fig 2(b) in the PDF.
     """
+
     def __init__(self, args):
         super(RandomPatchPrompter, self).__init__()
 
@@ -158,4 +167,3 @@ class RandomPatchPrompter(nn.Module):
         #######################
         # END OF YOUR CODE    #
         #######################
-

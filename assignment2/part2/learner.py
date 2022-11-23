@@ -15,21 +15,29 @@
 ################################################################################
 
 """Defines the trainer class for prompt-learning using CLIP."""
+
 import os
+import random
+import time
 from pprint import pprint
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-import random
 from clip import clip
 from torch.cuda.amp import GradScaler
-import time
-
-
 from tqdm import tqdm
+
+from dataset import construct_dataloader, load_dataset
+from utils import (
+    AverageMeter,
+    ProgressMeter,
+    accuracy,
+    cosine_lr,
+    save_checkpoint,
+    set_seed,
+)
 from vpt_model import CustomCLIP
-from utils import cosine_lr, AverageMeter, ProgressMeter, accuracy, save_checkpoint, set_seed
-from dataset import load_dataset, construct_dataloader
 
 
 class Learner:

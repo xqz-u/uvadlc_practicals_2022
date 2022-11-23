@@ -15,16 +15,16 @@
 ################################################################################
 
 """Defines helper functions for loading data and constructing dataloaders."""
+import torch
+from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import CIFAR10, CIFAR100
 from torchvision.transforms import Compose
-from torch.utils.data import DataLoader, random_split
-import torch
 
 DATASET = {"cifar10": CIFAR10, "cifar100": CIFAR100}
 
 
 class AddGaussianNoise(torch.nn.Module):
-    def __init__(self, mean=0., std=0.1):
+    def __init__(self, mean=0.0, std=0.1):
         self.mean = mean
         self.std = std
 
@@ -46,7 +46,9 @@ class AddGaussianNoise(torch.nn.Module):
         #######################
 
     def __repr__(self):
-        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+        return self.__class__.__name__ + "(mean={0}, std={1})".format(
+            self.mean, self.std
+        )
 
 
 def load_dataset(args, preprocess):

@@ -15,19 +15,15 @@
 ################################################################################
 
 """Defines the VisualPrompting model (based on CLIP)"""
-from pprint import pprint
-import matplotlib.pyplot as plt
 
+from pprint import pprint
+
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-
 from clip import clip
-from vp import (
-    PadPrompter,
-    RandomPatchPrompter,
-    FixedPatchPrompter,
-)
 
+from vp import FixedPatchPrompter, PadPrompter, RandomPatchPrompter
 
 PROMPT_TYPES = {
     "padding": PadPrompter,
@@ -36,27 +32,9 @@ PROMPT_TYPES = {
 }
 
 
-def load_clip_to_cpu(cfg):
-    """Loads CLIP model to CPU."""
-    backbone_name = cfg.MODEL.BACKBONE.NAME
-    url = clip._MODELS[backbone_name]
-    model_path = clip._download(url)
-
-    try:
-        # loading JIT archive
-        model = torch.jit.load(model_path, map_location="cpu").eval()
-        state_dict = None
-
-    except RuntimeError:
-        state_dict = torch.load(model_path, map_location="cpu")
-
-    model = clip.build_model(state_dict or model.state_dict())
-
-    return model
-
-
 class CustomCLIP(nn.Module):
     """Modified CLIP module to support prompting."""
+
     def __init__(self, args, dataset, template="This is a photo of {}"):
         super(CustomCLIP, self).__init__()
         classnames = dataset.classes

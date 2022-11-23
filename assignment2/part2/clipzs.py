@@ -31,6 +31,7 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10, CIFAR100
 from tqdm import tqdm
 
+import utils as u
 from utils import AverageMeter, set_seed
 
 DATASET = {"cifar10": CIFAR10, "cifar100": CIFAR100}
@@ -370,9 +371,9 @@ def main():
     for i, (batch, labels) in enumerate(loader, 1):
         batch, labels = batch.to(device), labels.to(device)
         start = time.time()
-        predictions = clipzs.model_inference(batch).argmax(1)
+        predictions = clipzs.model_inference(batch)
         pred_time += time.time() - start
-        accuracy = sum(predictions == labels) / batch_size
+        accuracy = u.accuracy(predictions, labels)[0].item()
         top1.update(accuracy, batch_size)
         # print(f"Batch {i} accuracy: {accuracy:.3f}")
         # if i == 20:
