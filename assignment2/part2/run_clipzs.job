@@ -26,6 +26,6 @@ python $code_dir/clipzs.py --dataset cifar10 --split test --root $root --visuali
 echo "CIFAR10 TRAIN"
 python $code_dir/clipzs.py --dataset cifar10 --split train --root $root --visualize_predictions
 echo "CIFAR100 TEST"
-python $code_dir/clipzs.py --dataset cifar100 --split train --root $root --visualize_predictions
-echo "CIFAR100 TRAIN"
 python $code_dir/clipzs.py --dataset cifar100 --split test --root $root --visualize_predictions
+echo "CIFAR100 TRAIN"
+python $code_dir/clipzs.py --dataset cifar100 --split train --root $root --visualize_predictions

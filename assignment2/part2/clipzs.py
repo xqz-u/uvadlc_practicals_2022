@@ -306,8 +306,12 @@ def main():
         images = torch.stack(images).to(device)
         logits = clipzs.model_inference(images)
 
+        assets_dir_path = "./data/assets"
+        os.makedirs(assets_dir_path, exist_ok=True)
         c_names = "_".join(args.class_names) if args.class_names else "default"
-        fig_file = f"{args.dataset}-{args.split}_{c_names}.png"
+        fig_file = os.path.join(
+            assets_dir_path, f"{args.dataset}-{args.split}_{c_names}.png"
+        )
         visualize_predictions(images, logits, clipzs.class_names, fig_file)
 
     if args.class_names is not None:
@@ -329,6 +333,9 @@ def main():
         pred_time += time.time() - start
         accuracy = sum(predictions == labels) / batch_size
         top1.update(accuracy, batch_size)
+        print(f"Batch {i} accuracy: {accuracy:.3f}")
+        # if i == 20:
+        #     break
     print(f"Mean prediction time batch size {batch_size}: {pred_time / i}")
 
     print(
