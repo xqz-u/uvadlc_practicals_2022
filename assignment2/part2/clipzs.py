@@ -333,7 +333,7 @@ def main():
         pred_time += time.time() - start
         accuracy = sum(predictions == labels) / batch_size
         top1.update(accuracy, batch_size)
-        print(f"Batch {i} accuracy: {accuracy:.3f}")
+        # print(f"Batch {i} accuracy: {accuracy:.3f}")
         # if i == 20:
         #     break
     print(f"Mean prediction time batch size {batch_size}: {pred_time / i}")
