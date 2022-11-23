@@ -83,40 +83,11 @@ class FixedPatchPrompter(nn.Module):
         assert isinstance(args.image_size, int), "image_size must be an integer"
         assert isinstance(args.prompt_size, int), "prompt_size must be an integer"
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-        # TODO: Define the prompt parameters here. The prompt is basically a
-        # patch (can define as self.patch) of size [prompt_size, prompt_size]
-        # that is placed at the top-left corner of the image.
-
-        # Hints:
-        # - The size of patch needs to be [1, 3, prompt_size, prompt_size]
-        #     (1 for the batch dimension)
-        #     (3 for the RGB channels)
-        # - You can define variable parameters using torch.nn.Parameter
-        # - You can initialize the patch randomly in N(0, 1) using torch.randn
-
-        raise NotImplementedError
-        #######################
-        # END OF YOUR CODE    #
-        #######################
+        self.patch = nn.Parameter(torch.randn(1, 3, args.prompt_size, args.prompt_size))
 
     def forward(self, x):
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-        # TODO: For a given batch of images, place the patch at the top-left
-
-        # Hints:
-        # - First define the prompt. Then add it to the batch of images.
-        # - It is always advisable to implement and then visualize if
-        #   your prompter does what you expect it to do.
-
-        raise NotImplementedError
-        #######################
-        # END OF YOUR CODE    #
-        #######################
+        x[:, :, : self.patch.size(2), : self.patch.size(3)] = self.patch
+        return x
 
 
 class RandomPatchPrompter(nn.Module):

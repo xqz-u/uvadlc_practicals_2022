@@ -138,7 +138,8 @@ class ZeroshotCLIP(nn.Module):
         self.clip_model = clip_model
         self.logit_scale = self.clip_model.logit_scale.exp().detach()
 
-    def precompute_text_features(self, clip_model, prompts, device) -> torch.Tensor:
+    @staticmethod
+    def precompute_text_features(clip_model, prompts, device) -> torch.Tensor:
         """
         Precomputes text features for the given prompts.
 
@@ -385,26 +386,3 @@ def main():
 if __name__ == "__main__":
     main()
     # q3b()
-
-
-# class dotdict(dict):
-#     """dot.notation access to dictionary attributes"""
-
-#     __getattr__ = dict.get
-#     __setattr__ = dict.__setitem__
-#     __delattr__ = dict.__delitem__
-
-
-# args = dotdict(
-#     {
-#         "seed": 42,
-#         "num_workers": 1,
-#         "arch": "ViT-B/32",
-#         "dataset": "cifar10",
-#         "root": "./data",
-#         "batch_size": 32,
-#         "prompt_template": "This is a photo of a {}",
-#         "split": "train",
-#         "device": "cpu",
-#     }
-# )

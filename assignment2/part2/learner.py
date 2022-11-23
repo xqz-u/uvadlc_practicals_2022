@@ -68,24 +68,15 @@ class Learner:
             self.resume_checkpoint()
 
         print("Turning off gradients in both the image and the text encoder")
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-        # TODO: Turn off gradients in both the image and the text encoder
-        # Note: You need to keep the visual prompt's parameters trainable
-        # Hint: Check for "prompt_learner" in the parameters' names
-
-        raise NotImplementedError
-        #######################
-        # END OF YOUR CODE    #
-        #######################
+        for name, param in self.vpt.named_parameters():
+            if name != "prompt_learner.patch":
+                param.requires_grad = False
 
         # Double check
         enabled = set()
         for name, param in self.vpt.named_parameters():
             if param.requires_grad:
                 enabled.add(name)
-        print(f"Parameters to be updated:")
         pprint(f"Parameters to be updated: {enabled}")
 
         # Print number of parameters
@@ -205,7 +196,7 @@ class Learner:
         num_batches_per_epoch = len(self.train_loader)
 
         end = time.time()
-        for i, (images, target) in enumerate(tqdm(self.train_loader)):
+        for i, (images, targets) in enumerate(tqdm(self.train_loader)):
 
             # Measure data loading time
             data_time.update(time.time() - end)
@@ -214,24 +205,12 @@ class Learner:
             step = num_batches_per_epoch * epoch + i
             self.scheduler(step)
 
-            #######################
-            # PUT YOUR CODE HERE  #
-            #######################
-
-            # TODO: Implement the training step for a single batch
-
-            # Steps ( your usual training loop :) ):
-            # - Set the gradients to zero
-            # - Move the images/targets to the device
-            # - Perform a forward pass (using self.vpt)
-            # - Compute the loss (using self.criterion)
-            # - Perform a backward pass
-            # - Update the parameters
-
-            raise NotImplementedError
-            #######################
-            # END OF YOUR CODE    #
-            #######################
+            self.optimizer.zero_grad()
+            images, targets = images.to(self.device), targets.to(self.device)
+            predictions = self.vpt(images)
+            loss = self.criterion(predictions, targets)
+            loss.backward()
+            self.optimizer.step()
 
             # Note: we clamp to 4.6052 = ln(100), as in the original paper.
             self.vpt.logit_scale.data = torch.clamp(
@@ -239,7 +218,7 @@ class Learner:
             )
 
             # Measure accuracy
-            acc1 = accuracy(output, target, topk=(1,))
+            acc1 = accuracy(predictions, targets, topk=(1,))
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0].item(), images.size(0))
 
@@ -280,26 +259,13 @@ class Learner:
 
         with torch.no_grad():
             end = time.time()
-            for i, (images, target) in enumerate(tqdm(loader)):
-
-                #######################
-                # PUT YOUR CODE HERE  #
-                #######################
-
-                # TODO: Implement the evaluation step for a single batch
-
-                # Steps ( your usual evaluation loop :) ):
-                # - Move the images/targets to the device
-                # - Forward pass (using self.vpt)
-                # - Compute the loss (using self.criterion)
-
-                raise NotImplementedError
-                #######################
-                # END OF YOUR CODE    #
-                #######################
+            for i, (images, targets) in enumerate(tqdm(loader)):
+                images, targets = images.to(self.device), targets.to(self.device)
+                predictions = self.vpt(images.to(self.device))
+                loss = self.criterion(predictions, targets)
 
                 # Measure accuracy and record loss
-                acc1 = accuracy(output, target, topk=(1,))
+                acc1 = accuracy(predictions, targets, topk=(1,))
                 losses.update(loss.item(), images.size(0))
                 top1_prompt.update(acc1[0].item(), images.size(0))
 

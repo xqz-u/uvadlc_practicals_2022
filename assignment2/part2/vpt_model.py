@@ -16,6 +16,7 @@
 
 """Defines the VisualPrompting model (based on CLIP)"""
 
+import os
 from pprint import pprint
 
 import matplotlib.pyplot as plt
@@ -23,6 +24,7 @@ import torch
 import torch.nn as nn
 from clip import clip
 
+import clipzs
 from vp import FixedPatchPrompter, PadPrompter, RandomPatchPrompter
 
 PROMPT_TYPES = {
@@ -48,28 +50,13 @@ class CustomCLIP(nn.Module):
             clip_model = clip_model.float()
 
         prompts = [template.format(c.replace("_", " ")) for c in classnames]
-        print("List of prompts:")
-        pprint(prompts)
+        if args.verbose:
+            print("List of prompts:")
+            pprint(prompts)
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-
-        # TODO: Write code to compute text features.
-        # Hint: You can use the code from clipzs.py here!
-
-        # Instructions:
-        # - Given a list of prompts, compute the text features for each prompt.
-        # - Return a tensor of shape (num_prompts, 512).
-
-        # remove this line once you implement the function
-        raise NotImplementedError("Write the code to compute text features.")
-
-        #######################
-        # END OF YOUR CODE    #
-        #######################
-
-        self.text_features = text_features
+        self.text_features = clipzs.ZeroshotCLIP.precompute_text_features(
+            clip_model, prompts, args.device
+        )
         self.clip_model = clip_model
         self.logit_scale = self.clip_model.logit_scale.exp().detach()
 
@@ -79,30 +66,9 @@ class CustomCLIP(nn.Module):
         if args.visualize_prompt:
             self.visualize_prompt(args.method)
 
-    def forward(self, image):
+    def forward(self, images):
         """Forward pass of the model."""
-
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-
-        # TODO: Implement the forward function. This is not exactly the same as
-        # the model_inferece function in clipzs.py! Please see the steps below.
-
-        # Steps:
-        # - [!] Add the prompt to the image using self.prompt_learner.
-        # - Compute the image features using the CLIP model.
-        # - Normalize the image features.
-        # - Compute similarity logits between the image features and the text features.
-        # - You need to multiply the similarity logits with the logit scale (clip_model.logit_scale).
-        # - Return logits of shape (num_classes,).
-
-        # remove this line once you implement the function
-        raise NotImplementedError("Implement the model_inference function.")
-
-        #######################
-        # END OF YOUR CODE    #
-        #######################
+        return clipzs.ZeroshotCLIP.model_inference(self, self.prompt_learner(images))
 
     def load_clip_to_cpu(self, args):
         """Loads CLIP model to CPU."""
@@ -125,6 +91,8 @@ class CustomCLIP(nn.Module):
         fake_img = torch.ones(1, 3, 224, 224)
         prompted_img = self.prompt_learner(fake_img)[0].cpu()
         prompted_img = torch.clamp(prompted_img, 0, 1)
-
         print("Visualizing prompt...")
-        plt.imsave(f"prompt_{method}.png", prompted_img.permute(1, 2, 0).numpy())
+        plt.imsave(
+            os.path.join("./data/assets", f"prompt_{method}.png"),
+            prompted_img.permute(1, 2, 0).numpy(),
+        )
