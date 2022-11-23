@@ -336,8 +336,7 @@ def main():
         # print(f"Batch {i} accuracy: {accuracy:.3f}")
         # if i == 20:
         #     break
-    print(f"Mean prediction time batch size {batch_size}: {pred_time / i}")
-
+    print(f"Batch size: {batch_size} #batches: {i} mean pred. time: {pred_time / i}")
     print(f"Zero-shot CLIP top-1 accuracy on {args.dataset}/{args.split}: {top1}")
 
 
