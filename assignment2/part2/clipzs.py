@@ -296,7 +296,7 @@ def main():
     clipzs = ZeroshotCLIP(args=args, dataset=dataset, template=args.prompt_template)
 
     # define the metric tracker for top1 accuracy
-    top1 = AverageMeter("Acc@1", ":6.2f")
+    top1 = AverageMeter("Acc@1", ":6.3f")
 
     # Part 3. (Optional) Visualize predictions
     if args.visualize_predictions:
@@ -334,13 +334,11 @@ def main():
         accuracy = sum(predictions == labels) / batch_size
         top1.update(accuracy, batch_size)
         print(f"Batch {i} accuracy: {accuracy:.3f}")
-        # if i == 20:
-        #     break
+        if i == 20:
+            break
     print(f"Mean prediction time batch size {batch_size}: {pred_time / i}")
 
-    print(
-        f"Zero-shot CLIP top-1 accuracy on {args.dataset}/{args.split}: {top1.val*100}"
-    )
+    print(f"Zero-shot CLIP top-1 accuracy on {args.dataset}/{args.split}: {top1}")
 
 
 if __name__ == "__main__":
