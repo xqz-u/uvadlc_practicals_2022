@@ -207,8 +207,13 @@ class Learner:
 
             self.optimizer.zero_grad()
             images, targets = images.to(self.device), targets.to(self.device)
-            predictions = self.vpt(images)
+            mod_images = self.vpt.prompt_learner(images)
+            print("images shapes:", images.shape, mod_images.shape)
+            predictions, b = self.vpt(mod_images)
+            print(predictions.shape, targets.shape, b.shape)
             loss = self.criterion(predictions, targets)
+            print(loss.shape, loss.requires_grad)
+            exit(0)
             loss.backward()
             self.optimizer.step()
 

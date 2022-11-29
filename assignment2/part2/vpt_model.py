@@ -18,13 +18,13 @@
 
 import os
 from pprint import pprint
+from typing import List
 
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from clip import clip
 
-import clipzs
 from vp import FixedPatchPrompter, PadPrompter, RandomPatchPrompter
 
 PROMPT_TYPES = {
@@ -54,10 +54,8 @@ class CustomCLIP(nn.Module):
             print("List of prompts:")
             pprint(prompts)
 
-        self.text_features = clipzs.ZeroshotCLIP.precompute_text_features(
-            clip_model, prompts, args.device
-        )
         self.clip_model = clip_model
+        self.text_features = self.precompute_text_features(prompts, args.device)
         self.logit_scale = self.clip_model.logit_scale.exp().detach()
 
         assert args.method in PROMPT_TYPES, f"{args.method} is not supported :)!"
@@ -66,9 +64,19 @@ class CustomCLIP(nn.Module):
         if args.visualize_prompt:
             self.visualize_prompt(args.method)
 
-    def forward(self, images):
+    def precompute_text_features(self, prompts: List[str], device: str) -> torch.Tensor:
+        text_tokens = clip.tokenize(prompts).to(device)
+        text_embeddings = self.clip_model.encode_text(text_tokens)
+        return text_embeddings / text_embeddings.norm(dim=0)
+
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
         """Forward pass of the model."""
-        return clipzs.ZeroshotCLIP.model_inference(self, self.prompt_learner(images))
+        image_embeddings = self.clip_model.encode_image(images)
+        image_embeddings /= image_embeddings.norm(dim=-1, keepdim=True)
+        similarity = (
+            self.clip_model.logit_scale * image_embeddings @ self.text_features.T
+        )
+        return similarity
 
     def load_clip_to_cpu(self, args):
         """Loads CLIP model to CPU."""

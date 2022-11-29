@@ -138,8 +138,7 @@ class ZeroshotCLIP(nn.Module):
         self.clip_model = clip_model
         self.logit_scale = self.clip_model.logit_scale.exp().detach()
 
-    @staticmethod
-    def precompute_text_features(clip_model, prompts, device) -> torch.Tensor:
+    def precompute_text_features(self, clip_model, prompts, device) -> torch.Tensor:
         """
         Precomputes text features for the given prompts.
 

@@ -86,7 +86,8 @@ class FixedPatchPrompter(nn.Module):
         self.patch = nn.Parameter(torch.randn(1, 3, args.prompt_size, args.prompt_size))
 
     def forward(self, x):
-        x[:, :, : self.patch.size(2), : self.patch.size(3)] = self.patch
+        # x = x.clone()
+        x[:, :, : self.patch.size(2), : self.patch.size(3)] += self.patch
         return x
 
 
