@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 # MIT License
 #
 # Copyright (c) 2022 University of Amsterdam
@@ -15,6 +15,7 @@
 ################################################################################
 
 import argparse
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -22,7 +23,7 @@ import torch.nn.functional as F
 import torch.utils.data as data
 import torchvision.models as models
 
-from cifar100_utils import get_train_validation_set, get_test_set
+from cifar100_utils import get_test_set, get_train_validation_set
 
 
 def set_seed(seed):
@@ -64,7 +65,16 @@ def get_model(num_classes=100):
     return model
 
 
-def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device, augmentation_name=None):
+def train_model(
+    model,
+    lr,
+    batch_size,
+    epochs,
+    data_dir,
+    checkpoint_name,
+    device,
+    augmentation_name=None,
+):
     """
     Trains a given model architecture for the specified hyperparameters.
 
@@ -170,23 +180,26 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
     #######################
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Feel free to add more arguments or change the setup
 
-    parser.add_argument('--lr', default=0.001, type=float,
-                        help='Learning rate to use')
-    parser.add_argument('--batch_size', default=128, type=int,
-                        help='Minibatch size')
-    parser.add_argument('--epochs', default=30, type=int,
-                        help='Max number of epochs')
-    parser.add_argument('--seed', default=123, type=int,
-                        help='Seed to use for reproducing results')
-    parser.add_argument('--data_dir', default='data/', type=str,
-                        help='Data directory where to store/find the CIFAR100 dataset.')
-    parser.add_argument('--augmentation_name', default=None, type=str,
-                        help='Augmentation to use.')
+    parser.add_argument("--lr", default=0.001, type=float, help="Learning rate to use")
+    parser.add_argument("--batch_size", default=128, type=int, help="Minibatch size")
+    parser.add_argument("--epochs", default=30, type=int, help="Max number of epochs")
+    parser.add_argument(
+        "--seed", default=123, type=int, help="Seed to use for reproducing results"
+    )
+    parser.add_argument(
+        "--data_dir",
+        default="data/",
+        type=str,
+        help="Data directory where to store/find the CIFAR100 dataset.",
+    )
+    parser.add_argument(
+        "--augmentation_name", default=None, type=str, help="Augmentation to use."
+    )
 
     args = parser.parse_args()
     kwargs = vars(args)

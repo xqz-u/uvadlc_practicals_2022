@@ -8,3 +8,5 @@
 
 assignment1/data/*
 !assignment1/data/experiments_configs.json
+
+assignment2/theory/*.pdf
