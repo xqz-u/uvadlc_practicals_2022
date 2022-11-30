@@ -154,6 +154,9 @@ def train_model(
     train_loader = make_dataloader(train_dataset, batch_size=batch_size)
     val_loader = make_dataloader(val_dataset, batch_size=batch_size)
 
+    logger.info("~ train datapoints: %d", len(train_loader) * train_loader.batch_size)
+    logger.info("~ validation datapoints: %d", len(val_loader) * val_loader.batch_size)
+
     # Initialize the optimizer (Adam) to train the last layer of the model.
     optim = torch.optim.Adam(model.parameters(), lr=lr)
     loss_module = nn.CrossEntropyLoss()
@@ -196,12 +199,12 @@ def evaluate_model(model, data_loader, device, **kwargs):
         accuracy: The accuracy on the dataset.
 
     """
-
     mode, epoch, loss_module = (
         kwargs["mode"],
         kwargs.get("epoch", -1),
         kwargs["loss_module"],
     )
+
     loss, datapoints = 0.0, 0
     accuracies = torch.zeros(len(data_loader))
     # Set model to evaluation mode (Remember to set it back to training mode in
@@ -267,6 +270,8 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
     # Evaluate the model on the test set
     test_dataset = get_test_set(data_dir)
     test_loader = make_dataloader(test_dataset, batch_size)
+    logger.info("~ test datapoints: %d", len(test_loader) * test_loader.batch_size)
+
     evaluate_model(best_model, test_loader, device, mode="test")
     logger.info("Mean test accuracy over %d datapoints", len(test_loader))
 
