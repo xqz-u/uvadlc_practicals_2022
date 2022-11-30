@@ -5,6 +5,7 @@
 **/*.out
 **/*.png
 **/*.zip
+**/.ipynb_checkpoints
 
 assignment1/data/*
 !assignment1/data/experiments_configs.json
