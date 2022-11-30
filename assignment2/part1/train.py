@@ -17,6 +17,7 @@
 import argparse
 import logging
 import os
+from copy import deepcopy
 from pprint import pprint
 
 import numpy as np
@@ -74,12 +75,12 @@ def get_model(num_classes=100):
     model = tvmodels.resnet18(weights=trained_weights)
 
     # Randomly initialize and modify the model's last layer for CIFAR100.
+    for name, param in model.named_parameters():
+        param.requires_grad = False
+
     model.fc = nn.Linear(512, num_classes)
     model.fc.weight = nn.Parameter(torch.normal(0.0, 0.01, (num_classes, 512)))
     model.fc.bias = nn.Parameter(torch.zeros_like(model.fc.bias))
-    for name, param in model.named_parameters():
-        if name not in {"fc.weight", "fc.bias"}:
-            param.requires_grad = False
 
     return model
 
@@ -111,6 +112,7 @@ def train_one_epoch(
                 "[%d %d train] loss: %.3f", i + 1, datapoints, mean_running_loss
             )
             running_loss = 0.0
+
     return epoch_loss / datapoints
 
 
@@ -148,8 +150,11 @@ def train_model(
     train_loader = make_dataloader(train_dataset, batch_size=batch_size)
     val_loader = make_dataloader(val_dataset, batch_size=batch_size)
 
+    logger.info("~ train datapoints: %d", len(train_loader) * train_loader.batch_size)
+    logger.info("~ validation datapoints: %d", len(val_loader) * val_loader.batch_size)
+
     # Initialize the optimizer (Adam) to train the last layer of the model.
-    optim = torch.optim.Adam(model.parameters(), lr=lr)
+    optim = torch.optim.Adam(model.fc.parameters(), lr=lr)
     loss_module = nn.CrossEntropyLoss()
 
     checkpoint_fname = os.path.join(data_dir, checkpoint_name)
@@ -168,7 +173,7 @@ def train_model(
         if best_accuracy is None or val_accuracy > best_accuracy:
             logger.info("[Epoch %s] update best model: %s", epoch, checkpoint_fname)
             best_accuracy = val_accuracy
-            torch.save(model.state_dict(), checkpoint_fname)
+            torch.save(deepcopy(model.state_dict()), checkpoint_fname)
 
     # Load the best model on val accuracy and return it.
     model.load_state_dict(torch.load(checkpoint_fname))
@@ -242,6 +247,7 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
     # Evaluate the model on the test set
     test_dataset = get_test_set(data_dir)
     test_loader = make_dataloader(test_dataset, batch_size)
+    logger.info("~ test datapoints: %d", len(test_loader) * test_loader.batch_size)
     test_accuracy = evaluate_model(best_model, test_loader, device)
     logger.info("Mean test accuracy: %.3f", test_accuracy)
 
@@ -274,10 +280,10 @@ if __name__ == "__main__":
     main(**kwargs)
 
 
-# kwargs = {}
-# seed = 42
-# data_dir = "./data"
-# augmentation_name = None
-# batch_size = 128
-# lr = 0.001
-# epochs = 3
+kwargs = {}
+seed = 42
+data_dir = "./data"
+augmentation_name = None
+batch_size = 128
+lr = 0.001
+epochs = 3
