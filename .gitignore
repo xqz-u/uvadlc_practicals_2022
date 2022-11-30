@@ -4,9 +4,12 @@
 **/*.log
 **/*.out
 **/*.zip
+# **/*.png
 **/.ipynb_checkpoints
 
-assignment1/data/*
-!assignment1/data/experiments_configs.json
+**/theory/*
+!**/theory/*.tex
 
-assignment2/theory/*.pdf
+# assignment1/data/*
+**/data/*
+!assignment1/data/experiments_configs.json
