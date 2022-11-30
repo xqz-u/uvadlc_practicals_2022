@@ -155,7 +155,7 @@ def train_model(
     val_loader = make_dataloader(val_dataset, batch_size=batch_size)
 
     # Initialize the optimizer (Adam) to train the last layer of the model.
-    optim = torch.optim.Adam(model.params(), lr=lr)
+    optim = torch.optim.Adam(model.parameters(), lr=lr)
     loss_module = nn.CrossEntropyLoss()
 
     args = {"loss_module": loss_module, "device": device}
