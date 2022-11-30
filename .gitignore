@@ -3,7 +3,6 @@
 **/*.aux
 **/*.log
 **/*.out
-**/*.png
 **/*.zip
 **/.ipynb_checkpoints
 
