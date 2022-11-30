@@ -19,6 +19,6 @@ source activate dl2022
 root="/scratch/$USER"
 mkdir -p $root
 
-code_dir="/home/$USER/uvadlc_practicals_2022/assignment2/part2"
+code_dir="/home/$USER/uvadlc_practicals_2022/assignment2/part1"
 
 time (python $code_dir/train.py --data-dir $root)
