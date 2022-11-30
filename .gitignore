@@ -10,6 +10,5 @@
 **/theory/*
 !**/theory/*.tex
 
-# assignment1/data/*
 **/data/*
 !assignment1/data/experiments_configs.json
