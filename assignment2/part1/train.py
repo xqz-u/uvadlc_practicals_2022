@@ -216,7 +216,7 @@ def evaluate_model(model, data_loader, device, **kwargs):
             logits = model(batch)
             loss += loss_module(logits, labels).item() * len(batch)
             datapoints += len(batch)
-            predictions = logits.argmax(0)
+            predictions = logits.argmax(1)
             accuracies[i] = (predictions == labels).sum() / predictions.sum()
 
     accuracy = accuracies.mean()
@@ -296,7 +296,6 @@ if __name__ == "__main__":
     kwargs = vars(args)
     pprint(kwargs)
     setup_root_logging()
-    logger.info("Calling main...")
     main(**kwargs)
 
 
