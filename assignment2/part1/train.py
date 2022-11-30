@@ -295,6 +295,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     kwargs = vars(args)
     pprint(kwargs)
+    setup_root_logging()
     main(**kwargs)
 
 
