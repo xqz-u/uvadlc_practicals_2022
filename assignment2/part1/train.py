@@ -80,6 +80,7 @@ def get_model(num_classes=100):
     model = tvmodels.resnet18(weights=trained_weights)
 
     # Randomly initialize and modify the model's last layer for CIFAR100.
+    model.fc = nn.Linear(512, num_classes)
     model.fc.weight = nn.Parameter(torch.normal(0.0, 0.01, (num_classes, 512)))
     model.fc.bias = nn.Parameter(torch.zeros_like(model.fc.bias))
     for name, param in model.named_parameters():
@@ -154,7 +155,7 @@ def train_model(
     val_loader = make_dataloader(val_dataset, batch_size=batch_size)
 
     # Initialize the optimizer (Adam) to train the last layer of the model.
-    optim = torch.optim.Adam(lr=lr)
+    optim = torch.optim.Adam(model.params(), lr=lr)
     loss_module = nn.CrossEntropyLoss()
 
     args = {"loss_module": loss_module, "device": device}

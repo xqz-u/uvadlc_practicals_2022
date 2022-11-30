@@ -21,4 +21,4 @@ mkdir -p $root
 
 code_dir="/home/$USER/uvadlc_practicals_2022/assignment2/part1"
 
-time (python $code_dir/train.py --data-dir $root)
+time (python $code_dir/train.py --data_dir $root)
