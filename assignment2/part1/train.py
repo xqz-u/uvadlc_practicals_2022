@@ -280,10 +280,10 @@ if __name__ == "__main__":
     main(**kwargs)
 
 
-kwargs = {}
-seed = 42
-data_dir = "./data"
-augmentation_name = None
-batch_size = 128
-lr = 0.001
-epochs = 3
+# kwargs = {}
+# seed = 42
+# data_dir = "./data"
+# augmentation_name = None
+# batch_size = 128
+# lr = 0.001
+# epochs = 3
