@@ -100,7 +100,7 @@ def train_one_epoch(
     loss_module = kwargs["loss_module"]
     epoch_loss, running_loss, datapoints = 0.0, 0.0, 0
     for i, (batch, labels) in enumerate(train_dataloader):
-        batch = batch.to(kwargs["device"])
+        batch, labels = batch.to(kwargs["device"]), labels.to(kwargs["device"])
         # zero the parameter gradients
         optimizer.zero_grad()
         # forward + backward + optimize
@@ -212,7 +212,7 @@ def evaluate_model(model, data_loader, device, **kwargs):
     # Remember to use torch.no_grad().
     with torch.no_grad():
         for i, (batch, labels) in enumerate(data_loader):
-            batch = batch.to(device)
+            batch, labels = batch.to(device), labels.to(device)
             logits = model(batch)
             loss += loss_module(logits, labels).item() * len(batch)
             datapoints += len(batch)
@@ -296,6 +296,7 @@ if __name__ == "__main__":
     kwargs = vars(args)
     pprint(kwargs)
     setup_root_logging()
+    logger.info("Calling main...")
     main(**kwargs)
 
 
