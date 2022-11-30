@@ -171,7 +171,7 @@ def train_model(
         train_losses.append(train_metrics["train_loss"])
         logger.info("[%d train     ] mean loss: %.3f", epoch, train_losses[-1])
         train_metrics.update(
-            evaluate_model(model, val_loader, mode="validation", **args)
+            evaluate_model(model, val_loader, mode="validation", epoch=epoch, **args)
         )
         accuracy = train_metrics["accuracy"]
         if best_params is None or accuracy > val_accuracies[-1]:
@@ -199,7 +199,7 @@ def evaluate_model(model, data_loader, device, **kwargs):
 
     mode, epoch, loss_module = (
         kwargs["mode"],
-        kwargs.get("epoch", None),
+        kwargs.get("epoch", -1),
         kwargs["loss_module"],
     )
     loss, datapoints = 0.0, 0
@@ -267,7 +267,7 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
     # Evaluate the model on the test set
     test_dataset = get_test_set(data_dir)
     test_loader = make_dataloader(test_dataset, batch_size)
-    evaluate_model(best_model, test_loader, device)
+    evaluate_model(best_model, test_loader, device, mode="test")
     logger.info("Mean test accuracy over %d datapoints", len(test_loader))
 
 
