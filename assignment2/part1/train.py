@@ -18,7 +18,6 @@ import argparse
 import logging
 import os
 from pprint import pprint
-from typing import Dict, List, Union
 
 import numpy as np
 import torch
@@ -28,11 +27,6 @@ import torch.utils.data as data
 import torchvision.models as tvmodels
 
 from cifar100_utils import get_test_set, get_train_validation_set
-
-Metrics = Dict[str, Union[float, np.ndarray, torch.Tensor]]
-Metrics = Dict[str, Union[float, np.ndarray, torch.Tensor]]
-MetricsDict = Union[Metrics, Dict[str, "MetricsDict"]]
-
 
 logger = logging.getLogger("Resnet18-ImageNet->Cifar100")
 
@@ -96,7 +90,7 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     running_loss_period: int = 50,
     **kwargs,
-) -> MetricsDict:
+) -> torch.Tensor:
     loss_module = kwargs["loss_module"]
     epoch_loss, running_loss, datapoints = 0.0, 0.0, 0
     for i, (batch, labels) in enumerate(train_dataloader):
@@ -117,7 +111,7 @@ def train_one_epoch(
                 "[%d %d train] loss: %.3f", i + 1, datapoints, mean_running_loss
             )
             running_loss = 0.0
-    return {"train_loss": epoch_loss / datapoints}
+    return epoch_loss / datapoints
 
 
 def train_model(
@@ -158,33 +152,30 @@ def train_model(
     optim = torch.optim.Adam(model.parameters(), lr=lr)
     loss_module = nn.CrossEntropyLoss()
 
-    args = {"loss_module": loss_module, "device": device}
     checkpoint_fname = os.path.join(data_dir, checkpoint_name)
 
     # Training loop with validation after each epoch. Save the best model.
-    best_params: List[np.ndarray] = None
-    train_losses, val_accuracies = [], []
+    best_accuracy = None
     for epoch in range(epochs):
         model.train()
         logger.debug("Epoch: %s", epoch)
-        train_metrics = train_one_epoch(train_loader, model, optim, **args)
-        train_losses.append(train_metrics["train_loss"])
-        logger.info("[%d train     ] mean loss: %.3f", epoch, train_losses[-1])
-        train_metrics.update(
-            evaluate_model(model, val_loader, mode="validation", epoch=epoch, **args)
+        train_loss = train_one_epoch(
+            train_loader, model, optim, loss_module=loss_module, device=device
         )
-        accuracy = train_metrics["accuracy"]
-        if best_params is None or accuracy > val_accuracies[-1]:
+        logger.info("[%d train     ] mean loss: %.3f", epoch, train_loss)
+        val_accuracy = evaluate_model(model, val_loader, device)
+        logger.info("[%d validation] mean accuaracy: %.3f", epoch, val_accuracy)
+        if best_accuracy is None or val_accuracy > best_accuracy:
+            logger.info("[Epoch %s] update best model: %s", epoch, checkpoint_fname)
+            best_accuracy = val_accuracy
             torch.save(model.state_dict(), checkpoint_fname)
-            logger.debug("[Epoch %s] updated best model: %s", epoch, checkpoint_fname)
-        val_accuracies.append(accuracy)
 
     # Load the best model on val accuracy and return it.
     model.load_state_dict(torch.load(checkpoint_fname))
     return model
 
 
-def evaluate_model(model, data_loader, device, **kwargs):
+def evaluate_model(model, data_loader, device):
     """
     Evaluates a trained model on a given dataset.
 
@@ -197,12 +188,6 @@ def evaluate_model(model, data_loader, device, **kwargs):
 
     """
 
-    mode, epoch, loss_module = (
-        kwargs["mode"],
-        kwargs.get("epoch", -1),
-        kwargs["loss_module"],
-    )
-    loss, datapoints = 0.0, 0
     accuracies = torch.zeros(len(data_loader))
     # Set model to evaluation mode (Remember to set it back to training mode in
     # the training loop)
@@ -214,20 +199,10 @@ def evaluate_model(model, data_loader, device, **kwargs):
         for i, (batch, labels) in enumerate(data_loader):
             batch, labels = batch.to(device), labels.to(device)
             logits = model(batch)
-            loss += loss_module(logits, labels).item() * len(batch)
-            datapoints += len(batch)
             predictions = logits.argmax(1)
             accuracies[i] = (predictions == labels).sum() / predictions.sum()
 
     accuracy = accuracies.mean()
-    logger.info(
-        "[%d %s] mean loss: %.3f accuracy: %.3f",
-        epoch,
-        mode,
-        loss / datapoints,
-        accuracy,
-    )
-
     return accuracy
 
 
@@ -267,8 +242,8 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
     # Evaluate the model on the test set
     test_dataset = get_test_set(data_dir)
     test_loader = make_dataloader(test_dataset, batch_size)
-    evaluate_model(best_model, test_loader, device, mode="test")
-    logger.info("Mean test accuracy over %d datapoints", len(test_loader))
+    test_accuracy = evaluate_model(best_model, test_loader, device)
+    logger.info("Mean test accuracy: %.3f", test_accuracy)
 
 
 if __name__ == "__main__":
@@ -304,3 +279,5 @@ if __name__ == "__main__":
 # data_dir = "./data"
 # augmentation_name = None
 # batch_size = 128
+# lr = 0.001
+# epochs = 3
