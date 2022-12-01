@@ -29,7 +29,7 @@ augmentations = {
         (32, 32), scale=(0.8, 1.0), ratio=(0.9, 1.1)
     ),
     "color_jitter": lambda _: transforms.ColorJitter(brightness=0.5, hue=0.3),
-    "all": lambda d: transforms.Compose([v() for k, v in d.items() if k != "all"]),
+    "all": lambda d: transforms.Compose([v(d) for k, v in d.items() if k != "all"]),
 }
 
 
@@ -48,7 +48,7 @@ def add_augmentation(augmentation_name, transform_list):
     assert augmenter is not None, f"Unsupported augmentation: {augmentation_name}"
 
     # Add the new transformation to the list.
-    transform_list.append(augmenter(augmentations))
+    transform_list.insert(0, augmenter(augmentations))
 
 
 def get_train_validation_set(

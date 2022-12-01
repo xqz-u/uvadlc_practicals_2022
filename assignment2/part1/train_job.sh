@@ -2,10 +2,10 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:1
-#SBATCH --job-name=resnet18_imagenet_cifar100
+#SBATCH --job-name=resnet18_imagenet_cifar100_all
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=3
-#SBATCH --time=04:00:00
+#SBATCH --time=06:00:00
 #SBATCH --mem=32000M
 #SBATCH --output=/home/%u/job_logs/%x_%A_%u.out
 
@@ -21,4 +21,8 @@ mkdir -p $root
 
 code_dir="/home/$USER/uvadlc_practicals_2022/assignment2/part1"
 
-python $code_dir/train.py --data_dir $root
+augmentations=(rand_hflip rand_crop color_jitter all)
+
+for aug in "${augmentations[@]}"; do
+    echo "Resnet18 Imagenet-1K -> CIFAR100, method: $aug"
+    python $code_dir/train.py --data_dir $root --augmentation_name $aug
