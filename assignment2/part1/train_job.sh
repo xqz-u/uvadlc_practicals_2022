@@ -10,11 +10,10 @@
 #SBATCH --output=/home/%u/job_logs/%x_%A_%u.out
 
 module purge
-module load 2021
-module load Anaconda3/2021.05
+module load 2022
 
 # activate the environment
-source activate dl2022
+conda activate dl2022
 
 root="/scratch/$USER"
 mkdir -p $root
