@@ -251,7 +251,6 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
         device,
         augmentation_name=augmentation_name,
     )
-    exit(0)
     # Evaluate the model on the test set
     test_dataset = get_test_set(data_dir)
     test_loader = make_dataloader(test_dataset, batch_size)
