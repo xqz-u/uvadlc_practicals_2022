@@ -200,12 +200,24 @@ def evaluate_model(model, data_loader, device):
 
     # Loop over the dataset and compute the accuracy. Return the accuracy
     # Remember to use torch.no_grad().
+    running_acc = 0.0
     with torch.no_grad():
         for i, (batch, labels) in enumerate(data_loader):
             batch, labels = batch.to(device), labels.to(device)
             logits = model(batch)
+            logger.info("Logits are on GPU -> %s", logits.is_cuda)
+            if not logits.is_cuda:
+                logits = logits.cuda()
+            logger.info("Logits are on GPU now -> %s", logits.is_cuda)
+            logits = logits.cpu()
+            logger.info("Logits are on CPU -> %s", not logits.is_cuda)
             predictions = logits.argmax(1)
+            running_acc = torch.mean(running_acc, torch.mean(predictions == labels))
+            logger.info("running acc ", running_acc)
             accuracies[i] = (predictions == labels).sum() / len(predictions)
+            logger.info("accumulator %.3f", accuracies[-1])
+            if i == 0:
+                break
 
     accuracy = accuracies.mean()
     return accuracy
@@ -228,9 +240,11 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
     # Set the seed for reproducibility
     set_seed(seed)
     # Set the device to use for training
-    device = torch.device("cpu" if not torch.cuda.is_available() else "cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info("Main, device: %s", device)
     # Load the model
     model = get_model().to(device)
+    logger.info(f"model device: {next(model.parameters()).device}")
     # Get the augmentation to use
     ...
     # Train the model
@@ -244,6 +258,7 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
         device,
         augmentation_name=augmentation_name,
     )
+    exit(0)
     # Evaluate the model on the test set
     test_dataset = get_test_set(data_dir)
     test_loader = make_dataloader(test_dataset, batch_size)
