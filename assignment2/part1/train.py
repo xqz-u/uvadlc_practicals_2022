@@ -160,7 +160,7 @@ def train_model(
     checkpoint_fname = os.path.join(data_dir, checkpoint_name)
 
     # Training loop with validation after each epoch. Save the best model.
-    best_accuracy = None
+    best_accuracy = -1.0
     for epoch in range(epochs):
         model.train()
         logger.debug("Epoch: %s", epoch)
@@ -170,7 +170,8 @@ def train_model(
         logger.info("[%d train     ] mean loss: %.3f", epoch, train_loss)
         val_accuracy = evaluate_model(model, val_loader, device)
         logger.info("[%d validation] mean accuracy: %.3f", epoch, val_accuracy)
-        if best_accuracy is None or val_accuracy > best_accuracy:
+        # if best_accuracy is None or val_accuracy > best_accuracy:
+        if val_accuracy > best_accuracy:
             logger.info("[Epoch %s] update best model: %s", epoch, checkpoint_fname)
             best_accuracy = val_accuracy
             torch.save(deepcopy(model.state_dict()), checkpoint_fname)
@@ -212,7 +213,8 @@ def evaluate_model(model, data_loader, device):
             logits = logits.cpu()
             logger.info("Logits are on CPU -> %s", not logits.is_cuda)
             predictions = logits.argmax(1)
-            running_acc = torch.mean(running_acc, torch.mean(predictions == labels))
+            batch_acc = torch.mean(((predictions == labels).float())).to(device)
+            running_acc = (running_acc + batch_acc) / 2
             logger.info("running acc ", running_acc)
             accuracies[i] = (predictions == labels).sum() / len(predictions)
             logger.info("accumulator %.3f", accuracies[-1])
@@ -302,3 +304,11 @@ if __name__ == "__main__":
 # batch_size = 128
 # lr = 0.001
 # epochs = 3
+
+
+# running = 0.0
+# a = torch.Tensor([1, 2.0, 2.0, 1, 1])
+# b = torch.Tensor(list(reversed([1, 2.0, 2.0, 1, 1])))
+# ab = (a == b).float()
+# m = ab.mean()
+# running = (running + m.cpu()) / 2
