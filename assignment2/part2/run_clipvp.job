@@ -31,8 +31,8 @@ mkdir -p $root
 
 datasets=(cifar10)
 methods=(fixed_patch)
-prompt_sizes=(30)
-# prompt_sizes=(1)
+# prompt_sizes=(30)
+prompt_sizes=(1)
 
 for dataset in "${datasets[@]}"; do
     for i in "${!methods[@]}"; do

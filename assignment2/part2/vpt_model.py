@@ -71,11 +71,10 @@ class CustomCLIP(nn.Module):
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         """Forward pass of the model."""
+        images = self.prompt_learner(images)
         image_embeddings = self.clip_model.encode_image(images)
         image_embeddings /= image_embeddings.norm(dim=-1, keepdim=True)
-        similarity = (
-            self.clip_model.logit_scale * image_embeddings @ self.text_features.T
-        )
+        similarity = self.logit_scale * (image_embeddings @ self.text_features.T)
         return similarity
 
     def load_clip_to_cpu(self, args):

@@ -158,48 +158,48 @@ if __name__ == "__main__":
     main()
 
 
-# class dotdict(dict):
-#     """dot.notation access to dictionary attributes"""
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
 
-#     __getattr__ = dict.get
-#     __setattr__ = dict.__setitem__
-#     __delattr__ = dict.__delitem__
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 
-# args = dotdict(
-#     {
-#         "arch": "ViT-B/32",
-#         "batch_size": 128,
-#         "dataset": "cifar100",
-#         "device": "cpu",
-#         "epochs": 1000,
-#         "evaluate": False,
-#         "filename": "fixed_patch_30_cifar100_clip_ViT-B/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1",
-#         "gpu": None,
-#         "image_dir": "./save/images",
-#         "image_size": 224,
-#         "learning_rate": 40,
-#         "method": "fixed_patch",
-#         "model": "clip",
-#         "model_dir": "./save/models",
-#         "model_folder": "./save/models/fixed_patch_30_cifar100_clip_ViT-B/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1",
-#         "momentum": 0.9,
-#         "num_workers": 8,
-#         "optim": "sgd",
-#         "patience": 1000,
-#         "print_freq": 10,
-#         "prompt_size": 30,
-#         "resume": None,
-#         "root": "./data",
-#         "save_freq": 50,
-#         "seed": 0,
-#         "square_size": 8,
-#         "test_noise": False,
-#         "text_prompt_template": "This is a photo of a {}",
-#         "trial": 1,
-#         "use_wandb": False,
-#         "visualize_prompt": True,
-#         "warmup": 1000,
-#         "weight_decay": 0,
-#     }
-# )
+args = dotdict(
+    {
+        "arch": "ViT-B/32",
+        "batch_size": 128,
+        "dataset": "cifar100",
+        "device": "cpu",
+        "epochs": 1000,
+        "evaluate": False,
+        "filename": "fixed_patch_30_cifar100_clip_ViT-B/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1",
+        "gpu": None,
+        "image_dir": "./save/images",
+        "image_size": 224,
+        "learning_rate": 40,
+        "method": "fixed_patch",
+        "model": "clip",
+        "model_dir": "./save/models",
+        "model_folder": "./save/models/fixed_patch_30_cifar100_clip_ViT-B/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1",
+        "momentum": 0.9,
+        "num_workers": 8,
+        "optim": "sgd",
+        "patience": 1000,
+        "print_freq": 10,
+        "prompt_size": 30,
+        "resume": None,
+        "root": "./data",
+        "save_freq": 50,
+        "seed": 0,
+        "square_size": 8,
+        "test_noise": False,
+        "text_prompt_template": "This is a photo of a {}",
+        "trial": 1,
+        "use_wandb": False,
+        "visualize_prompt": True,
+        "warmup": 1000,
+        "weight_decay": 0,
+    }
+)
