@@ -92,10 +92,10 @@ def train_one_epoch(
     running_loss_period: int = 50,
     **kwargs,
 ) -> torch.Tensor:
-    loss_module = kwargs["loss_module"]
+    loss_module, device = kwargs["loss_module"], kwargs["device"]
     epoch_loss, running_loss, datapoints = 0.0, 0.0, 0
     for i, (batch, labels) in enumerate(train_dataloader):
-        batch, labels = batch.to(kwargs["device"]), labels.to(kwargs["device"])
+        batch, labels = batch.to(device), labels.to(device)
         # zero the parameter gradients
         optimizer.zero_grad()
         # forward + backward + optimize
@@ -201,19 +201,14 @@ def evaluate_model(model, data_loader, device):
 
     # Loop over the dataset and compute the accuracy. Return the accuracy
     # Remember to use torch.no_grad().
-    running_acc = 0.0
     with torch.no_grad():
         for i, (batch, labels) in enumerate(data_loader):
             batch, labels = batch.to(device), labels.to(device)
             logits = model(batch)
             predictions = logits.argmax(1)
-            batch_acc = torch.mean(((predictions == labels).float()))
-            running_acc = (running_acc + batch_acc) / 2
-            # if i == 0:
-            #     break
+            accuracies[i] = ((predictions == labels).float()).mean()
 
-    accuracy = accuracies.mean()
-    return accuracy
+    return accuracies.mean()
 
 
 def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
