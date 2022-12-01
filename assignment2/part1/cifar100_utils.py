@@ -14,10 +14,23 @@
 # Date Created: 2022-11-14
 ################################################################################
 
+import logging
+
 import torch
 from torch.utils.data import random_split
 from torchvision import transforms
 from torchvision.datasets import CIFAR100
+
+logger = logging.getLogger(__name__)
+
+augmentations = {
+    "rand_hflip": lambda _: transforms.RandomHorizontalFlip(),
+    "rand_crop": lambda _: transforms.RandomResizedCrop(
+        (32, 32), scale=(0.8, 1.0), ratio=(0.9, 1.1)
+    ),
+    "color_jitter": lambda _: transforms.ColorJitter(brightness=0.5, hue=0.3),
+    "all": lambda d: transforms.Compose([v() for k, v in d.items() if k != "all"]),
+}
 
 
 def add_augmentation(augmentation_name, transform_list):
@@ -28,19 +41,14 @@ def add_augmentation(augmentation_name, transform_list):
         transform_list: List of transforms to add the augmentation to.
 
     """
-    #######################
-    # PUT YOUR CODE HERE  #
-    #######################
+    logger.info("Pulling augmentation: %s", augmentation_name)
 
     # Create a new transformation based on the augmentation_name.
-    pass
+    augmenter: callable = augmentations.get(augmentation_name)
+    assert augmenter is not None, f"Unsupported augmentation: {augmentation_name}"
 
     # Add the new transformation to the list.
-    pass
-
-    #######################
-    # END OF YOUR CODE    #
-    #######################
+    transform_list.append(augmenter(augmentations))
 
 
 def get_train_validation_set(

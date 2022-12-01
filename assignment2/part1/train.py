@@ -233,8 +233,6 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name):
     # Load the model
     model = get_model().to(device)
     logger.info(f"model device: {next(model.parameters()).device}")
-    # Get the augmentation to use
-    ...
     # Train the model
     best_model = train_model(
         model,
@@ -280,20 +278,3 @@ if __name__ == "__main__":
     pprint(kwargs)
     setup_root_logging()
     main(**kwargs)
-
-
-# kwargs = {}
-# seed = 42
-# data_dir = "./data"
-# augmentation_name = None
-# batch_size = 128
-# lr = 0.001
-# epochs = 3
-
-
-# running = 0.0
-# a = torch.Tensor([1, 2.0, 2.0, 1, 1])
-# b = torch.Tensor(list(reversed([1, 2.0, 2.0, 1, 1])))
-# ab = (a == b).float()
-# m = ab.mean()
-# running = (running + m.cpu()) / 2
