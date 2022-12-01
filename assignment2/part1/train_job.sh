@@ -13,7 +13,7 @@ module purge
 module load 2022
 
 # activate the environment
-conda activate dl2022
+source activate dl2022
 
 root="/scratch/$USER"
 mkdir -p $root
