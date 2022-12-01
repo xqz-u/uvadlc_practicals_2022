@@ -206,20 +206,11 @@ def evaluate_model(model, data_loader, device):
         for i, (batch, labels) in enumerate(data_loader):
             batch, labels = batch.to(device), labels.to(device)
             logits = model(batch)
-            logger.info("Logits are on GPU -> %s", logits.is_cuda)
-            if not logits.is_cuda:
-                logits = logits.cuda()
-            logger.info("Logits are on GPU now -> %s", logits.is_cuda)
-            logits = logits.cpu()
-            logger.info("Logits are on CPU -> %s", not logits.is_cuda)
             predictions = logits.argmax(1)
-            batch_acc = torch.mean(((predictions == labels).float())).to(device)
+            batch_acc = torch.mean(((predictions == labels).float()))
             running_acc = (running_acc + batch_acc) / 2
-            logger.info("running acc ", running_acc)
-            accuracies[i] = (predictions == labels).sum() / len(predictions)
-            logger.info("accumulator %.3f", accuracies[-1])
-            if i == 0:
-                break
+            # if i == 0:
+            #     break
 
     accuracy = accuracies.mean()
     return accuracy
