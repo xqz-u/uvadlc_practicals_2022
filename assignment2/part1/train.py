@@ -169,7 +169,7 @@ def train_model(
         )
         logger.info("[%d train     ] mean loss: %.3f", epoch, train_loss)
         val_accuracy = evaluate_model(model, val_loader, device)
-        logger.info("[%d validation] mean accuaracy: %.3f", epoch, val_accuracy)
+        logger.info("[%d validation] mean accuracy: %.3f", epoch, val_accuracy)
         if best_accuracy is None or val_accuracy > best_accuracy:
             logger.info("[Epoch %s] update best model: %s", epoch, checkpoint_fname)
             best_accuracy = val_accuracy
@@ -205,7 +205,7 @@ def evaluate_model(model, data_loader, device):
             batch, labels = batch.to(device), labels.to(device)
             logits = model(batch)
             predictions = logits.argmax(1)
-            accuracies[i] = (predictions == labels).sum() / predictions.sum()
+            accuracies[i] = (predictions == labels).sum() / len(predictions)
 
     accuracy = accuracies.mean()
     return accuracy
