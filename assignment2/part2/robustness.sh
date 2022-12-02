@@ -23,7 +23,7 @@ code_dir="/home/$USER/uvadlc_practicals_2022/assignment2/part2"
 model_root="$code_dir/save/models/padding_30_cifar100_clip_ViT-B"
 
 echo "CLIPVP padding distributional shift on $dataset"
-python robustness.py --dataset cifar100 \
+python $code_dir/robustness.py --dataset cifar100 \
        --method padding \
        --test_noise \
        --evaluate \

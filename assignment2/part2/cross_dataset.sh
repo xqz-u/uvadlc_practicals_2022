@@ -46,7 +46,7 @@ dataset=${datasets[$(( $i / 3 ))]}
 
 echo "CLIPVP cross-datasets, method $method model $model"
 echo "$method $dataset $model"
-python cross_dataset.py --dataset $dataset \
+python $code_dir/cross_dataset.py --dataset $dataset \
        --method $method \
        --evaluate \
        --resume "$model/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1/model_best.pth.tar" \
