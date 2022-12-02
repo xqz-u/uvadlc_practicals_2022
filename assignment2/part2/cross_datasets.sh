@@ -36,7 +36,8 @@ model=${models[i]}
 method_idx=$(( $i / 2 ))
 method=${methods[method_idx]}
 # shouldn't be necessary but still
-dataset=${datasets[$(( $i / 3 ))]}
+dataset_idx=$(( $i / 3 ))
+dataset=${datasets[dataset_idx]}
 
 echo "CLIPVP cross-datasets, method $method model $model"
 echo "$method $dataset $model"
