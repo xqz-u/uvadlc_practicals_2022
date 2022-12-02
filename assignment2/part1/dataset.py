@@ -59,7 +59,8 @@ class AddGaussianNoise(torch.nn.Module):
 def load_dataset(args, preprocess):
     train_transform = preprocess
     if args.test_noise:
-        test_transform = Compose(preprocess.transforms + [AddGaussianNoise()])
+        # test_transform = Compose(preprocess.transforms + [AddGaussianNoise()])
+        test_transform = Compose([preprocess, AddGaussianNoise()])
     else:
         test_transform = preprocess
 
