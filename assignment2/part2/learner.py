@@ -13,7 +13,6 @@
 # Author: Deep Learning Course (UvA) | Fall 2022
 # Date Created: 2022-11-14
 ################################################################################
-
 """Defines the trainer class for prompt-learning using CLIP."""
 
 import os
@@ -68,8 +67,15 @@ class Learner:
             self.resume_checkpoint()
 
         print("Turning off gradients in both the image and the text encoder")
+        trainable = set(
+            [
+                f"prompt_learner.pad_{patch_type}"
+                for patch_type in ["left", "right", "up", "down"]
+            ]
+        )
+        trainable.add("prompt_learner.patch")
         for name, param in self.vpt.named_parameters():
-            if name != "prompt_learner.patch":
+            if name not in trainable:
                 param.requires_grad = False
 
         # Double check
@@ -196,6 +202,7 @@ class Learner:
         num_batches_per_epoch = len(self.train_loader)
 
         end = time.time()
+
         for i, (images, targets) in enumerate(tqdm(self.train_loader)):
 
             # Measure data loading time
@@ -206,14 +213,15 @@ class Learner:
             self.scheduler(step)
 
             self.optimizer.zero_grad()
+            
             images, targets = images.to(self.device), targets.to(self.device)
-            print("images shapes:", images.shape, images.shape)
-            predictions = self.vpt(images)
-            print(predictions.shape, targets.shape)
-            loss = self.criterion(predictions, targets)
-            print(loss.shape, loss.requires_grad)
-            loss.backward()
-            self.optimizer.step()
+            
+            with torch.cuda.amp.autocast():
+                logits = self.vpt(images)
+                loss = self.criterion(logits, targets)
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
 
             # Note: we clamp to 4.6052 = ln(100), as in the original paper.
             self.vpt.logit_scale.data = torch.clamp(
@@ -221,7 +229,7 @@ class Learner:
             )
 
             # Measure accuracy
-            acc1 = accuracy(predictions, targets, topk=(1,))
+            acc1 = accuracy(logits, targets, topk=(1,))
             losses.update(loss.item(), images.size(0))
             top1.update(acc1[0].item(), images.size(0))
 
@@ -242,8 +250,6 @@ class Learner:
                     },
                     self.args,
                 )
-            if i == 0:
-                break
 
         return losses.avg, top1.avg
 
@@ -266,11 +272,11 @@ class Learner:
             end = time.time()
             for i, (images, targets) in enumerate(tqdm(loader)):
                 images, targets = images.to(self.device), targets.to(self.device)
-                predictions = self.vpt(images.to(self.device))
-                loss = self.criterion(predictions, targets)
+                logits = self.vpt(images.to(self.device))
+                loss = self.criterion(logits, targets)
 
                 # Measure accuracy and record loss
-                acc1 = accuracy(predictions, targets, topk=(1,))
+                acc1 = accuracy(logits, targets, topk=(1,))
                 losses.update(loss.item(), images.size(0))
                 top1_prompt.update(acc1[0].item(), images.size(0))
 

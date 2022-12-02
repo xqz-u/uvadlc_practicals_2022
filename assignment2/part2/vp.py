@@ -13,7 +13,6 @@
 # Author: Deep Learning Course (UvA) | Fall 2022
 # Date Created: 2022-11-14
 ################################################################################
-
 """Defines various kinds of visual-prompting modules for images."""
 
 import numpy as np
@@ -31,6 +30,8 @@ class PadPrompter(nn.Module):
         super(PadPrompter, self).__init__()
         pad_size = args.prompt_size
         image_size = args.image_size
+        self.pad_size = pad_size
+        self.imsize = image_size
 
         #######################
         # PUT YOUR CODE HERE  #
@@ -38,7 +39,7 @@ class PadPrompter(nn.Module):
 
         # TODO: Define the padding as variables self.pad_left, self.pad_right,
         # self.pad_up, self.pad_down
-
+        
         # Hints:
         # - Each of these are parameters that we need to learn. So how would
         #   you define them in torch?
@@ -49,7 +50,16 @@ class PadPrompter(nn.Module):
         # - See Fig 2.(g)/(h) and think about the shape of self.pad_left and
         #   self.pad_right
 
-        raise NotImplementedError
+        self.pad_left = nn.Parameter(torch.randn(1, 3, pad_size, image_size - 2 * pad_size))
+        self.pad_right = nn.Parameter(torch.randn(1, 3, pad_size, image_size - 2 * pad_size))
+        self.pad_up = nn.Parameter(torch.randn(1, 3, image_size, pad_size))
+        self.pad_down = nn.Parameter(torch.randn(1, 3, image_size, pad_size))
+        
+        #self.pad_left = nn.Parameter(torch.randn([1, 3, image_size - 2 * pad_size, pad_size]))
+        #self.pad_right = nn.Parameter(torch.randn([1, 3, image_size - 2 * pad_size, pad_size]))
+        #self.pad_up = nn.Parameter(torch.randn([1, 3, pad_size, image_size]))
+        #self.pad_down = nn.Parameter(torch.randn([1, 3, pad_size, image_size]))
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -64,8 +74,13 @@ class PadPrompter(nn.Module):
         # - First define the prompt. Then add it to the batch of images.
         # - It is always advisable to implement and then visualize if
         #   your prompter does what you expect it to do.
+        
+        x[:, :, : self.pad_size, self.pad_size : self.imsize - self.pad_size ] += self.pad_left
+        x[:, :, self.imsize - self.pad_size :, self.pad_size : self.imsize - self.pad_size] += self.pad_right
+        x[:, :, :, : self.pad_size] += self.pad_up
+        x[:, :, :, self.imsize - self.pad_size :] += self.pad_down
+        return x
 
-        raise NotImplementedError
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -117,7 +132,7 @@ class RandomPatchPrompter(nn.Module):
         # - You can define variable parameters using torch.nn.Parameter
         # - You can initialize the patch randomly in N(0, 1) using torch.randn
 
-        raise NotImplementedError
+        self.patch = nn.Parameter(torch.randn(1, 3, args.prompt_size, args.prompt_size))
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -135,7 +150,10 @@ class RandomPatchPrompter(nn.Module):
         # - It is always advisable to implement and then visualize if
         #   your prompter does what you expect it to do.
 
-        raise NotImplementedError
+        xcoord, ycoord = torch.randint(0, x.size(2) - self.patch.size(2), (2,))
+        x[:, :, xcoord : xcoord + self.patch.size(2), ycoord : ycoord + self.patch.size(3)] += self.patch
+        return x
+
         #######################
         # END OF YOUR CODE    #
         #######################
