@@ -24,6 +24,7 @@ import torch
 import torch.nn as nn
 from clip import clip
 
+import clipzs
 from vp import FixedPatchPrompter, PadPrompter, RandomPatchPrompter
 
 PROMPT_TYPES = {
@@ -64,19 +65,24 @@ class CustomCLIP(nn.Module):
             self.visualize_prompt(args.method)
 
     def precompute_text_features(self, prompts: List[str], device: str) -> torch.Tensor:
+        return clipzs.ZeroshotCLIP.precompute_text_features(
+            self.clip_model, prompts, device
+        )
         # necessary since we only call this once on initialization, and learning the
         # prompts does not rely on these gradients
-        with torch.no_grad():
-            text_tokens = clip.tokenize(prompts).to(device)
-            text_embeddings = self.clip_model.encode_text(text_tokens)
-            text_embeddings = text_embeddings / text_embeddings.norm(dim=0)
-        return text_embeddings
+        # with torch.no_grad():
+        #     text_tokens = clip.tokenize(prompts).to(device)
+        #     text_embeddings = self.clip_model.encode_text(text_tokens)
+        #     text_embeddings = text_embeddings / text_embeddings.norm(dim=0)
+        # return text_embeddings
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         """Forward pass of the model."""
         images = self.prompt_learner(images)
         image_embeddings = self.clip_model.encode_image(images)
-        image_embeddings = image_embeddings / image_embeddings.norm(dim=-1, keepdim=True)
+        image_embeddings = image_embeddings / image_embeddings.norm(
+            dim=-1, keepdim=True
+        )
         similarity = self.logit_scale * (image_embeddings @ self.text_features.T)
         return similarity
 
@@ -101,6 +107,6 @@ class CustomCLIP(nn.Module):
         fake_img = torch.ones(1, 3, 224, 224)
         prompted_img = self.prompt_learner(fake_img)[0].cpu()
         prompted_img = torch.clamp(prompted_img, 0, 1)
-        
+
         print("Visualizing prompt...")
         plt.imsave(f"prompt_{method}.png", prompted_img.permute(1, 2, 0).numpy())

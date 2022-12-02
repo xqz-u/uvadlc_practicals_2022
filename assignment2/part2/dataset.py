@@ -62,7 +62,6 @@ def load_dataset(args, preprocess):
         test_transform = Compose(preprocess.transforms + [AddGaussianNoise()])
     else:
         test_transform = preprocess
-    print(test_transform)
 
     train_dataset = DATASET[args.dataset](
         args.root, transform=train_transform, download=True, train=True

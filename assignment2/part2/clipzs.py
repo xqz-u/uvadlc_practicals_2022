@@ -138,7 +138,8 @@ class ZeroshotCLIP(nn.Module):
         self.clip_model = clip_model
         self.logit_scale = self.clip_model.logit_scale.exp().detach()
 
-    def precompute_text_features(self, clip_model, prompts, device) -> torch.Tensor:
+    @staticmethod
+    def precompute_text_features(clip_model, prompts, device) -> torch.Tensor:
         """
         Precomputes text features for the given prompts.
 
@@ -153,10 +154,10 @@ class ZeroshotCLIP(nn.Module):
         Note: Do not forget to set torch.no_grad() while computing the text
         features.
         """
-        text_tokens = clip.tokenize(prompts).to(device)
         with torch.no_grad():
+            text_tokens = clip.tokenize(prompts).to(device)
             text_embeddings = clip_model.encode_text(text_tokens)
-        text_embeddings /= text_embeddings.norm(dim=0)
+            text_embeddings = text_embeddings / text_embeddings.norm(dim=0)
         return text_embeddings
 
     def model_inference(self, images) -> torch.Tensor:

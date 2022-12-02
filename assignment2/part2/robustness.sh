@@ -8,7 +8,7 @@
 #SBATCH --time=01:00:00
 #SBATCH --mem=16000M
 #SBATCH --output=/home/%u/job_logs/%x_%A_%a_%u.out
-#SBATCH --array=0-2
+#SBATCH --array=0-1
 
 module purge
 module load 2021
@@ -31,9 +31,6 @@ dataset=${datasets[i]}
 model=${models[i]}
 
 echo "CLIPVP padding distributional shift on $dataset"
-echo "$model/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1/model_best.pth.tar"
-echo $dataset
-exit 0
 python robustness.py --dataset $dataset \
        --method padding \
        --test_noise \

@@ -139,3 +139,7 @@ def show_rgb_img(im, T=True):
     im = (im - im.min(0)) / (im.max(0) - im.min(0))
     im = im.reshape((w, h, 3))
     plt.imshow(im)
+
+
+class DummyArgs:
+    ...
