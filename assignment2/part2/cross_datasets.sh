@@ -2,7 +2,7 @@
 
 #SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:1
-#SBATCH --job-name=robustness_CLIPVP_padding
+#SBATCH --job-name=cross_datasets
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --time=01:00:00
@@ -35,7 +35,8 @@ i=$SLURM_ARRAY_TASK_ID
 model=${models[i]}
 method_idx=$(( $i / 2 ))
 method=${methods[method_idx]}
-dataset=${datasets[$(( i / 3 ))]}
+# shouldn't be necessary but still
+dataset=${datasets[$(( $i / 3 ))]}
 
 echo "CLIPVP cross-datasets, method $method model $model"
 echo "$method $dataset $model"
