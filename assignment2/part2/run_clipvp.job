@@ -32,6 +32,9 @@ datasets=(cifar10 cifar100)
 methods=(fixed_patch random_patch padding)
 prompt_sizes=(1 1 30)
 
+model_dir="$HOME/uvadlc_practicals_2022/assignment2/part2/save/models"
+image_dir="$HOME/uvadlc_practicals_2022/assignment2/part2/save/images"
+
 for dataset in "${datasets[@]}"; do
     for i in "${!methods[@]}"; do
 	method=${methods[$i]}
@@ -47,6 +50,8 @@ for dataset in "${datasets[@]}"; do
 	    --root $root \
 	    --num_workers 3 \
 	    --print_freq 50 \
-	    --patience 5
+	    --patience 5 \
+	    --model_dir $model_dir \
+	    --image_dir $image_dir
     done
 done
