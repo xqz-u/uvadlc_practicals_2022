@@ -119,6 +119,7 @@ def parse_option():
     parser.add_argument(
         "--use_wandb", default=False, action="store_true", help="whether to use wandb"
     )
+    parser.add_argument("--verbose", action="store_true")
 
     args = parser.parse_args()
 
