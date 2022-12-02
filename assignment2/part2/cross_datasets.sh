@@ -33,15 +33,12 @@ models=("$code_dir/save/models/padding_30_cifar10_clip_ViT-B" \
 
 i=$SLURM_ARRAY_TASK_ID
 model=${models[i]}
-method_idx=$(( $i / 2 ))
-method=${methods[method_idx]}
+method=${methods[$(( $i / 2 ))]}
 # shouldn't be necessary but still
-# dataset_idx=$(( $i / 3 ))
 dataset=${datasets[$(( $i / 3 ))]}
 
 echo "CLIPVP cross-datasets, method $method model $model"
 echo "$method $dataset $model"
-exit 0
 python cross_datasets.py --dataset $dataset \
        --method $method \
        --evaluate \
