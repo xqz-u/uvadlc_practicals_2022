@@ -15,9 +15,13 @@
 ################################################################################
 
 """Helper script to evaluate noise robustness."""
-import os
+
 import argparse
+import os
+from pprint import pprint
+
 import torch
+
 from learner import Learner
 
 
@@ -111,6 +115,7 @@ def parse_option():
     parser.add_argument(
         "--use_wandb", default=False, action="store_true", help="whether to use wandb"
     )
+    parser.add_argument("--verbose", action="store_true")
 
     args = parser.parse_args()
 
@@ -139,7 +144,7 @@ def parse_option():
 def main():
 
     args = parse_option()
-    print(args)
+    pprint(vars(args))
     learn = Learner(args)
 
     if args.evaluate:

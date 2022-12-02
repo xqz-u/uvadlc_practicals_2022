@@ -115,7 +115,9 @@ class Learner:
         if os.path.isfile(self.args.resume):
             print("=> loading checkpoint '{}'".format(self.args.resume))
             if self.args.gpu is None:
-                checkpoint = torch.load(self.args.resume)
+                checkpoint = torch.load(
+                    self.args.resume, map_location=torch.device("cpu")
+                )
             else:
                 # Map model to be loaded to specified single gpu.
                 loc = "cuda:{}".format(self.args.gpu)
@@ -213,9 +215,9 @@ class Learner:
             self.scheduler(step)
 
             self.optimizer.zero_grad()
-            
+
             images, targets = images.to(self.device), targets.to(self.device)
-            
+
             with torch.cuda.amp.autocast():
                 logits = self.vpt(images)
                 loss = self.criterion(logits, targets)
@@ -286,6 +288,8 @@ class Learner:
 
                 if i % self.args.print_freq == 0:
                     progress.display(i)
+                if i == 0:
+                    break
 
             print(
                 " * Prompt Acc@1 {top1_prompt.avg:.3f}".format(top1_prompt=top1_prompt)
