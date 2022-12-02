@@ -1,4 +1,4 @@
-% Created 2022-12-02 Fri 13:47
+% Created 2022-12-02 Fri 18:35
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage{relsize}
@@ -59,6 +59,19 @@ CLIP Padding & CIFAR10 & Train & 0.926\\
 CLIP Padding & CIFAR10 & Test & 0.921\\
 CLIP Padding & CIFAR100 & Train & 0.652\\
 CLIP Padding & CIFAR100 & Test & 0.651\\
+\end{tabular}
+\end{center}
+
+
+\begin{center}
+\begin{tabular}{lr}
+Augmentation & Top-1 Mean Accuracy\\
+\hline
+None & 0.590\\
+Random horizontal flip & 0.598\\
+Random resize crop & 0.558\\
+Color jitter & 0.547\\
+All of the above & 0.509\\
 \end{tabular}
 \end{center}
 \end{document}
