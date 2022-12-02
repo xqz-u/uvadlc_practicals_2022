@@ -1,4 +1,4 @@
-% Created 2022-12-02 Fri 18:35
+% Created 2022-12-02 Fri 19:39
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage{relsize}
@@ -72,6 +72,31 @@ Random horizontal flip & 0.598\\
 Random resize crop & 0.558\\
 Color jitter & 0.547\\
 All of the above & 0.509\\
+\end{tabular}
+\end{center}
+
+
+\begin{center}
+\begin{tabular}{llr}
+Model & Train dataset & Top-1 Mean Accuracy\\
+\hline
+CLIP padding prompt (size 30) & CIFAR100 & 0.548\\
+Fine tuned Resnet18 & CIFAR100 & \\
+\end{tabular}
+\end{center}
+
+
+
+\begin{center}
+\begin{tabular}{lllr}
+Model & Train dataset & Test\textsubscript{dataset} & Top-1 Mean Accuracy\\
+\hline
+CLIP padding prompt (size 30) & CIFAR10 & CIFAR10 + CIFAR100 & 0.680\\
+CLIP fixed patch (size 1) & CIFAR10 & CIFAR10 + CIFAR100 & 0.692\\
+CLIP random patch (size 1) & CIFAR10 & CIFAR10 + CIFAR100 & 0.684\\
+CLIP padding prompt (size 30) & CIFAR100 & CIFAR10 + CIFAR100 & 0.643\\
+CLIP fixed patch (size 1) & CIFAR100 & CIFAR10 + CIFAR100 & 0.690\\
+CLIP random patch (size 1) & CIFAR100 & CIFAR10 + CIFAR100 & 0.688\\
 \end{tabular}
 \end{center}
 \end{document}

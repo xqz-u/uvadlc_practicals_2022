@@ -22,4 +22,4 @@ mkdir -p $root
 code_dir="/home/$USER/uvadlc_practicals_2022/assignment2/part1"
 
 echo "Fine-tuned Resnet18 on noisy CIFAR100"
-python $code_dir/robustness_resnet.py --resume $code_dir/best_model.pt
+python $code_dir/robustness_resnet.py --resume $code_dir/resnet18_cifar100_ckpt
