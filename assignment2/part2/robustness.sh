@@ -7,8 +7,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --time=01:00:00
 #SBATCH --mem=16000M
-#SBATCH --output=/home/%u/job_logs/%x_%A_%a_%u.out
-#SBATCH --array=0-1
+#SBATCH --output=/home/%u/job_logs/%x_%A_%u.out
 
 module purge
 module load 2021
@@ -21,18 +20,11 @@ root="/scratch/$USER"
 mkdir -p $root
 
 code_dir="/home/$USER/uvadlc_practicals_2022/assignment2/part2"
-
-datasets=(cifar10 cifar100)
-models=("$code_dir/save/models/padding_30_cifar10_clip_ViT-B" \
-	    "$code_dir/save/models/padding_30_cifar100_clip_ViT-B")
-
-i=$SLURM_ARRAY_TASK_ID
-dataset=${datasets[i]}
-model=${models[i]}
+model_root="$code_dir/save/models/padding_30_cifar100_clip_ViT-B"
 
 echo "CLIPVP padding distributional shift on $dataset"
-python robustness.py --dataset $dataset \
+python robustness.py --dataset cifar100 \
        --method padding \
        --test_noise \
        --evaluate \
-       --resume "$model/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1/model_best.pth.tar"
+       --resume "$model_root/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1/model_best.pth.tar"
