@@ -288,8 +288,6 @@ class Learner:
 
                 if i % self.args.print_freq == 0:
                     progress.display(i)
-                if i == 0:
-                    break
 
             print(
                 " * Prompt Acc@1 {top1_prompt.avg:.3f}".format(top1_prompt=top1_prompt)
