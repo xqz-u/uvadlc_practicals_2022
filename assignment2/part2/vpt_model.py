@@ -25,12 +25,13 @@ import torch.nn as nn
 from clip import clip
 
 import clipzs
-from vp import FixedPatchPrompter, PadPrompter, RandomPatchPrompter
+from vp import FixedPatchPrompter, PadPrompter, RandomPatchPrompter, checkers_prompt
 
 PROMPT_TYPES = {
     "padding": PadPrompter,
     "random_patch": RandomPatchPrompter,
     "fixed_patch": FixedPatchPrompter,
+    "checkers": checkers_prompt,
 }
 
 

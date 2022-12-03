@@ -39,7 +39,7 @@ class PadPrompter(nn.Module):
 
         # TODO: Define the padding as variables self.pad_left, self.pad_right,
         # self.pad_up, self.pad_down
-        
+
         # Hints:
         # - Each of these are parameters that we need to learn. So how would
         #   you define them in torch?
@@ -50,15 +50,19 @@ class PadPrompter(nn.Module):
         # - See Fig 2.(g)/(h) and think about the shape of self.pad_left and
         #   self.pad_right
 
-        self.pad_left = nn.Parameter(torch.randn(1, 3, pad_size, image_size - 2 * pad_size))
-        self.pad_right = nn.Parameter(torch.randn(1, 3, pad_size, image_size - 2 * pad_size))
+        self.pad_left = nn.Parameter(
+            torch.randn(1, 3, pad_size, image_size - 2 * pad_size)
+        )
+        self.pad_right = nn.Parameter(
+            torch.randn(1, 3, pad_size, image_size - 2 * pad_size)
+        )
         self.pad_up = nn.Parameter(torch.randn(1, 3, image_size, pad_size))
         self.pad_down = nn.Parameter(torch.randn(1, 3, image_size, pad_size))
-        
-        #self.pad_left = nn.Parameter(torch.randn([1, 3, image_size - 2 * pad_size, pad_size]))
-        #self.pad_right = nn.Parameter(torch.randn([1, 3, image_size - 2 * pad_size, pad_size]))
-        #self.pad_up = nn.Parameter(torch.randn([1, 3, pad_size, image_size]))
-        #self.pad_down = nn.Parameter(torch.randn([1, 3, pad_size, image_size]))
+
+        # self.pad_left = nn.Parameter(torch.randn([1, 3, image_size - 2 * pad_size, pad_size]))
+        # self.pad_right = nn.Parameter(torch.randn([1, 3, image_size - 2 * pad_size, pad_size]))
+        # self.pad_up = nn.Parameter(torch.randn([1, 3, pad_size, image_size]))
+        # self.pad_down = nn.Parameter(torch.randn([1, 3, pad_size, image_size]))
 
         #######################
         # END OF YOUR CODE    #
@@ -74,9 +78,16 @@ class PadPrompter(nn.Module):
         # - First define the prompt. Then add it to the batch of images.
         # - It is always advisable to implement and then visualize if
         #   your prompter does what you expect it to do.
-        
-        x[:, :, : self.pad_size, self.pad_size : self.imsize - self.pad_size ] += self.pad_left
-        x[:, :, self.imsize - self.pad_size :, self.pad_size : self.imsize - self.pad_size] += self.pad_right
+
+        x[
+            :, :, : self.pad_size, self.pad_size : self.imsize - self.pad_size
+        ] += self.pad_left
+        x[
+            :,
+            :,
+            self.imsize - self.pad_size :,
+            self.pad_size : self.imsize - self.pad_size,
+        ] += self.pad_right
         x[:, :, :, : self.pad_size] += self.pad_up
         x[:, :, :, self.imsize - self.pad_size :] += self.pad_down
         return x
@@ -151,9 +162,43 @@ class RandomPatchPrompter(nn.Module):
         #   your prompter does what you expect it to do.
 
         xcoord, ycoord = torch.randint(0, x.size(2) - self.patch.size(2), (2,))
-        x[:, :, xcoord : xcoord + self.patch.size(2), ycoord : ycoord + self.patch.size(3)] += self.patch
+        x[
+            :,
+            :,
+            xcoord : xcoord + self.patch.size(2),
+            ycoord : ycoord + self.patch.size(3),
+        ] += self.patch
         return x
 
         #######################
         # END OF YOUR CODE    #
         #######################
+
+
+class CheckersPrompt(nn.Module):
+    def __init__(self, image_size: int, square_size: int):
+        super().__init__()
+
+        assert isinstance(image_size, int), "image_size must be an integer"
+        assert isinstance(square_size, int), "square_size must be an integer"
+        assert (
+            not image_size % square_size
+        ), "image_size must be divisible by square_size"
+
+        self.tile = nn.Parameter(torch.randn(1, 3, square_size, square_size))
+        self.tile_size = square_size
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        for i, row_id in enumerate(range(0, x.size(2), self.tile_size), 1):
+            for j, col_id in enumerate(range(0, x.size(3), self.tile_size), 1):
+                if (i % 2 and j % 2) or not (i % 2 or j % 2):
+                    x[
+                        :,
+                        :,
+                        row_id : row_id + self.tile_size,
+                        col_id : col_id + self.tile_size,
+                    ] += self.tile
+        return x
+
+
+checkers_prompt = lambda args: CheckersPrompt(args.image_size, args.prompt_size)

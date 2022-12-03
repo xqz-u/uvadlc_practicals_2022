@@ -67,11 +67,7 @@ def parse_option_():
             "--method",
             type=str,
             default="padding",
-            choices=[
-                "padding",
-                "random_patch",
-                "fixed_patch",
-            ],
+            choices=["padding", "random_patch", "fixed_patch", "checkers"],
             help="choose visual prompting method",
         )
         parser.add_argument(
