@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --time=02:00:00
 #SBATCH --mem=20G
-#SBATCH --output=/home/%u/job_logs/%x_%A_%u.out
+#SBATCH --output=/home/%u/job_logs/%x_%A_%a_%u.out
 #SBATCH --array=0-1
 
 module purge
