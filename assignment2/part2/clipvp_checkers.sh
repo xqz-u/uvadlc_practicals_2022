@@ -6,9 +6,9 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --time=02:00:00
-#SBATCH --mem=20G
+#SBATCH --mem=16G
 #SBATCH --output=/home/%u/job_logs/%x_%A_%a_%u.out
-#SBATCH --array=0-1
+#SBATCH --array=0
 
 module purge
 module load 2021
@@ -22,7 +22,10 @@ mkdir -p $root
 
 code_dir="/home/$USER/uvadlc_practicals_2022/assignment2/part2"
 
-datasets=(cifar10 cifar100)
+datasets=(
+    # cifar10
+    cifar100
+	 )
 
 i=$SLURM_ARRAY_TASK_ID
 dataset=${datasets[i]}
