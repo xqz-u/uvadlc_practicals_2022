@@ -15,7 +15,6 @@
 ################################################################################
 """Defines various kinds of visual-prompting modules for images."""
 
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -185,7 +184,7 @@ class CheckersPrompt(nn.Module):
             not image_size % square_size
         ), "image_size must be divisible by square_size"
 
-        self.tile = nn.Parameter(torch.randn(1, 3, square_size, square_size))
+        self.patch = nn.Parameter(torch.randn(1, 3, square_size, square_size))
         self.tile_size = square_size
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -197,7 +196,7 @@ class CheckersPrompt(nn.Module):
                         :,
                         row_id : row_id + self.tile_size,
                         col_id : col_id + self.tile_size,
-                    ] += self.tile
+                    ] += self.patch
         return x
 
 
