@@ -16,6 +16,7 @@
 
 import argparse
 import os
+from pprint import pprint
 
 import numpy as np
 import pytorch_lightning as pl
@@ -45,15 +46,19 @@ class VAE(pl.LightningModule):
         self.encoder = CNNEncoder(z_dim=z_dim, num_filters=num_filters)
         self.decoder = CNNDecoder(z_dim=z_dim, num_filters=num_filters)
 
-    def forward(self, imgs):
+    def forward(self, imgs: torch.Tensor):
         """
-        The forward function calculates the VAE-loss for a given batch of images.
+        The forward function calculates the VAE-loss for a given batch of
+        images.
         Inputs:
             imgs - Batch of images of shape [B,C,H,W].
-                   The input images are converted to 4-bit, i.e. integers between 0 and 15.
+                   The input images are converted to 4-bit, i.e. integers
+                   between 0 and 15.
         Ouptuts:
-            L_rec - The average reconstruction loss of the batch. Shape: single scalar
-            L_reg - The average regularization loss (KLD) of the batch. Shape: single scalar
+            L_rec - The average reconstruction loss of the batch.
+                    Shape: single scalar
+            L_reg - The average regularization loss (KLD) of the batch.
+                    Shape: single scalar
             bpd - The average bits per dimension metric of the batch.
                   This is also the loss we train on. Shape: single scalar
         """
@@ -62,17 +67,22 @@ class VAE(pl.LightningModule):
         # - Implement the empty functions in utils.py before continuing
         # - The forward run consists of encoding the images, sampling in
         #   latent space, and decoding.
-        # - By default, torch.nn.functional.cross_entropy takes the mean accross
-        #   all axes. Do not forget to change the 'reduction' parameter to
-        #   make it consistent with the loss definition of the assignment.
+        # - By default, torch.nn.functional.cross_entropy takes the mean
+        #   accross all axes. Do not forget to change the 'reduction'
+        #   parameter to make it consistent with the loss definition of the
+        #   assignment.
 
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        L_rec = None
-        L_reg = None
-        bpd = None
-        raise NotImplementedError
+        mean, std = self.encoder(imgs)
+        z = torch.randn(imgs.shape[0])
+        z = (z[:, None] + mean) * std
+        x_hat = self.decoder(z)
+        L_rec = F.cross_entropy(x_hat, imgs.squeeze(), reduction="sum")
+        L_rec = L_rec / imgs.shape[0]
+        L_reg = KLD(mean, std).mean()
+        bpd = elbo_to_bpd(L_rec, imgs.shape)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -109,7 +119,6 @@ class VAE(pl.LightningModule):
         self.log("train_regularization_loss", L_reg, on_step=False, on_epoch=True)
         self.log("train_ELBO", L_rec + L_reg, on_step=False, on_epoch=True)
         self.log("train_bpd", bpd, on_step=False, on_epoch=True)
-
         return bpd
 
     def validation_step(self, batch, batch_idx):
@@ -285,5 +294,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    pprint(vars(args))
 
     train_vae(args)
