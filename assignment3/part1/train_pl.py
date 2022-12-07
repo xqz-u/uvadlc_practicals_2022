@@ -76,8 +76,7 @@ class VAE(pl.LightningModule):
         # PUT YOUR CODE HERE  #
         #######################
         mean, std = self.encoder(imgs)
-        z = torch.randn(imgs.shape[0])
-        z = (z[:, None] + mean) * std
+        z = sample_reparameterize(mean, std)
         x_hat = self.decoder(z)
         L_rec = F.cross_entropy(x_hat, imgs.squeeze(), reduction="sum")
         L_rec = L_rec / imgs.shape[0]
@@ -100,8 +99,11 @@ class VAE(pl.LightningModule):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        x_samples = None
-        raise NotImplementedError
+        z = sample_reparameterize(
+            torch.zeros((batch_size, self.encoder.z_dim)),
+            torch.eye(batch_size, self.encoder.z_dim),
+        )
+        x_samples = self.decoder(z)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -167,9 +169,8 @@ class GenerateCallback(pl.Callback):
             epoch - The epoch number to use for TensorBoard logging and saving of the files.
         """
         samples = pl_module.sample(self.batch_size)
-        samples = (
-            samples.float() / 15
-        )  # Converting 4-bit images to values between 0 and 1
+        # Converting 4-bit images to values between 0 and 1
+        samples = samples.float() / 15
         grid = make_grid(
             samples, nrow=8, normalize=True, value_range=(0, 1), pad_value=0.5
         )

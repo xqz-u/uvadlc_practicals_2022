@@ -12,3 +12,5 @@
 
 **/data/*
 !assignment1/data/experiments_configs.json
+
+assignment3/part1/VAE_logs
