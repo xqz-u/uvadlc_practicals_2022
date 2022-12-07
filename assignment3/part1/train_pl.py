@@ -64,7 +64,7 @@ def cl_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--num_workers",
-        default=4,
+        default=os.cpu_count(),
         type=int,
         help="Number of workers to use in the data loaders. To have a truly deterministic run, this has to be 0. "
         + "For your assignment report, you can use multiple workers (e.g. 4) and do not have to set it to 0.",
