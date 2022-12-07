@@ -157,7 +157,7 @@ class VAE(pl.LightningModule):
         #######################
         shape = (batch_size, self.encoder.z_dim)
         z = u.sample_reparameterize(torch.zeros(shape), torch.ones(shape))
-        x_samples = self.decoder(z).argmax(1)
+        x_samples = self.decoder(z.to(self.decoder.device)).argmax(1)
         x_samples = x_samples[:, None, ...]
         #######################
         # END OF YOUR CODE    #
