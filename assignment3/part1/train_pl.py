@@ -18,17 +18,20 @@ import argparse
 import os
 from pprint import pprint
 
-import numpy as np
+# import numpy as np
 import pytorch_lightning as pl
 import torch
-import torch.nn as nn
+
+# import torch.nn as nn
 import torch.nn.functional as F
+
+# import torchvision.transforms.functional as F
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torchvision.utils import make_grid, save_image
 
+import utils as u
 from cnn_encoder_decoder import CNNDecoder, CNNEncoder
 from mnist import mnist
-from utils import *
 
 
 class VAE(pl.LightningModule):
@@ -75,13 +78,14 @@ class VAE(pl.LightningModule):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        mean, std = self.encoder(imgs)
-        z = sample_reparameterize(mean, std)
+        mean, log_std = self.encoder(imgs)
+        std = log_std.exp()
+        z = u.sample_reparameterize(mean, std)
         x_hat = self.decoder(z)
         L_rec = F.cross_entropy(x_hat, imgs.squeeze(), reduction="sum")
         L_rec = L_rec / imgs.shape[0]
-        L_reg = KLD(mean, std).mean()
-        bpd = elbo_to_bpd(L_rec, imgs.shape)
+        L_reg = u.KLD(mean, log_std).mean()
+        bpd = u.elbo_to_bpd(L_rec, imgs.shape)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -99,11 +103,10 @@ class VAE(pl.LightningModule):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        z = sample_reparameterize(
-            torch.zeros((batch_size, self.encoder.z_dim)),
-            torch.eye(batch_size, self.encoder.z_dim),
-        )
-        x_samples = self.decoder(z)
+        shape = (batch_size, self.encoder.z_dim)
+        z = u.sample_reparameterize(torch.zeros(shape), torch.ones(shape))
+        x_samples = self.decoder(z).argmax(1)
+        x_samples = x_samples[:, None, ...]
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -172,7 +175,7 @@ class GenerateCallback(pl.Callback):
         # Converting 4-bit images to values between 0 and 1
         samples = samples.float() / 15
         grid = make_grid(
-            samples, nrow=8, normalize=True, value_range=(0, 1), pad_value=0.5
+            samples, nrow=8, value_range=(0, 1), normalize=True, pad_value=0.5
         )
         grid = grid.detach().cpu()
         trainer.logger.experiment.add_image("Samples", grid, global_step=epoch)
@@ -206,9 +209,8 @@ def train_vae(args):
         callbacks=[save_callback, gen_callback],
         enable_progress_bar=args.progress_bar,
     )
-    trainer.logger._default_hp_metric = (
-        None  # Optional logging argument that we don't need
-    )
+    # Optional logging argument that we don't need
+    trainer.logger._default_hp_metric = None
     if not args.progress_bar:
         print(
             "[INFO] The progress bar has been suppressed. For updates on the training "
@@ -230,7 +232,7 @@ def train_vae(args):
 
     # Manifold generation
     if args.z_dim == 2:
-        img_grid = visualize_manifold(model.decoder)
+        img_grid = u.visualize_manifold(model.decoder)
         save_image(
             img_grid,
             os.path.join(trainer.logger.log_dir, "vae_manifold.png"),
@@ -298,3 +300,42 @@ if __name__ == "__main__":
     pprint(vars(args))
 
     train_vae(args)
+
+
+# kwargs = {
+#     # "batch_size": 128,
+#     "batch_size": 4,
+#     "data_dir": "./data",
+#     "epochs": 80,
+#     "log_dir": "VAE_logs",
+#     "lr": 0.001,
+#     "num_filters": 32,
+#     "num_workers": 4,
+#     "progress_bar": False,
+#     "seed": 42,
+#     "z_dim": 20,
+# }
+# args = argparse.Namespace(**kwargs)
+
+
+# batch, labs = next(iter(train_loader))
+# batch_show = batch.squeeze().to(torch.uint8)
+
+
+# model = VAE(num_filters=args.num_filters, z_dim=args.z_dim, lr=args.lr)
+
+# grid = make_grid(batch_show, nrow=4)
+# # u.show(list(grid), cmap="gray")
+
+
+# samples = model.sample(4)
+# samples = samples.float() / 15
+# grid = make_grid(samples, nrow=4, normalize=True, value_range=(0, 1), pad_value=0.5)
+# grid = grid.detach().cpu()
+# u.show(list(grid), cmap="gray")
+
+# pl.seed_everything(args.seed)
+# s = torch.randn((4, 20))
+# pl.seed_everything(args.seed)
+# ss = u.sample_reparameterize(torch.zeros((4, 20)), torch.ones(4, 20))
+# assert (s == ss).all()

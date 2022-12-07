@@ -136,9 +136,6 @@ class CNNDecoder(nn.Module):
                 padding=1,
                 stride=2,
             ),
-            # The input images is scaled between -1 and 1, hence
-            # the output has to be bounded as well
-            nn.Tanh(),
         )
         # #######################
         # # END OF YOUR CODE    #

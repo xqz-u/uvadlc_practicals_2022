@@ -14,8 +14,10 @@
 # Date Created: 2022-11-25
 ################################################################################
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torchvision.transforms.functional as F
 from torchvision.utils import make_grid
 
 
@@ -131,3 +133,14 @@ def visualize_manifold(decoder, grid_size=20):
     #######################
 
     return img_grid
+
+
+def show(imgs, cmap=None):
+    if not isinstance(imgs, list):
+        imgs = [imgs]
+    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    for i, img in enumerate(imgs):
+        img = img.detach()
+        img = F.to_pil_image(img)
+        axs[0, i].imshow(np.asarray(img), cmap=cmap)
+        axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
