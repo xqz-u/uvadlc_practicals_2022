@@ -134,10 +134,10 @@ class VAE(pl.LightningModule):
         std = log_std.exp()
         z = u.sample_reparameterize(mean, std)
         x_hat = self.decoder(z)
-        L_rec = F.cross_entropy(x_hat, imgs.squeeze(), reduction="sum")
-        L_rec = L_rec / imgs.shape[0]
+        L_rec = F.cross_entropy(x_hat, imgs.squeeze(), reduction="sum") / imgs.shape[0]
         L_reg = u.KLD(mean, log_std).mean()
-        bpd = u.elbo_to_bpd(L_rec, imgs.shape)
+        elbo = L_rec + L_reg
+        bpd = u.elbo_to_bpd(elbo, imgs.shape)
         #######################
         # END OF YOUR CODE    #
         #######################
