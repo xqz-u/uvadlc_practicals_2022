@@ -326,3 +326,6 @@ if __name__ == "__main__":
 #     "z_dim": 20,
 # }
 # args = argparse.Namespace(**kwargs)
+# model = VAE.load_from_checkpoint(
+#     "./VAE_logs/lightning_logs/version_10477841/checkpoints/epoch=73-step=31228.ckpt"
+# )

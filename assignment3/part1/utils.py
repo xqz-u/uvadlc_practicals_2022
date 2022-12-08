@@ -17,7 +17,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torchvision.transforms.functional as F
+import torch.nn.functional as F
+import torchvision.transforms.functional as tvF
 from torchvision.utils import make_grid
 
 
@@ -102,16 +103,20 @@ def elbo_to_bpd(elbo: torch.Tensor, img_shape: tuple) -> torch.Tensor:
     return bpd
 
 
+# TODO sample right values, this are spaced by 0.2 in latent space, should be
+# 0.05
 @torch.no_grad()
 def visualize_manifold(decoder, grid_size=20):
     """
-    Visualize a manifold over a 2 dimensional latent space. The images in the manifold
-    should represent the decoder's output means (not binarized samples of those).
+    Visualize a manifold over a 2 dimensional latent space. The images in the
+    manifold should represent the decoder's output means (not binarized samples
+    of those).
     Inputs:
         decoder - Decoder model such as LinearDecoder or ConvolutionalDecoder.
         grid_size - Number of steps/images to have per axis in the manifold.
-                    Overall you need to generate grid_size**2 images, and the distance
-                    between different latents in percentiles is 1/grid_size
+                    Overall you need to generate grid_size**2 images, and the
+                    distance between different latents in percentiles is
+                    1/grid_size
     Outputs:
         img_grid - Grid of images representing the manifold.
     """
@@ -126,8 +131,32 @@ def visualize_manifold(decoder, grid_size=20):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    img_grid = None
-    raise NotImplementedError
+    G = torch.distributions.Normal(0, 1)
+    start, end = torch.Tensor([0.01]), torch.Tensor([0.99])
+    xs = torch.linspace(G.icdf(start).item(), G.icdf(end).item(), steps=grid_size)
+    ys = torch.linspace(G.icdf(start).item(), G.icdf(end).item(), steps=grid_size)
+    # xs = G.icdf(torch.linspace(0.01, 0.99, steps=grid_size))
+    # ys = G.icdf(torch.linspace(0.01, 0.99, steps=grid_size))
+    x, y = torch.meshgrid(xs, ys, indexing="xy")
+    xy = torch.dstack((x, y))
+    pixel_probs = F.softmax(decoder(xy.view(-1, 2)), dim=1)
+    im_shape = pixel_probs.shape[2:]
+    pixel_probs = pixel_probs.view(*pixel_probs.shape[:2], -1).permute(0, 2, 1)
+    ims = []
+    for im_probs in pixel_probs:
+        k = torch.multinomial(im_probs, 1)
+        im = im_probs.gather(1, k)
+        # im = im_probs.argmax(1)
+        ims.append(im.view(*im_shape))
+    ims = torch.stack(ims, axis=0)[:, None, ...].float()
+    ims = 1.0 - ims
+    img_grid = make_grid(
+        ims,
+        nrow=grid_size,
+        value_range=(0, 1),
+        normalize=True,
+        pad_value=0.5,
+    )
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -135,12 +164,12 @@ def visualize_manifold(decoder, grid_size=20):
     return img_grid
 
 
-def show(imgs, cmap=None):
+def show(imgs, cmap=None, figsize=(10, 10)):
     if not isinstance(imgs, list):
         imgs = [imgs]
-    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False, figsize=figsize)
     for i, img in enumerate(imgs):
         img = img.detach()
-        img = F.to_pil_image(img)
+        img = tvF.to_pil_image(img)
         axs[0, i].imshow(np.asarray(img), cmap=cmap)
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
