@@ -103,8 +103,6 @@ def elbo_to_bpd(elbo: torch.Tensor, img_shape: tuple) -> torch.Tensor:
     return bpd
 
 
-# TODO sample right values, this are spaced by 0.2 in latent space, should be
-# 0.05
 @torch.no_grad()
 def visualize_manifold(decoder, grid_size=20):
     """
@@ -132,26 +130,17 @@ def visualize_manifold(decoder, grid_size=20):
     # PUT YOUR CODE HERE  #
     #######################
     G = torch.distributions.Normal(0, 1)
-    start, end = torch.Tensor([0.01]), torch.Tensor([0.99])
-    xs = torch.linspace(G.icdf(start).item(), G.icdf(end).item(), steps=grid_size)
-    ys = torch.linspace(G.icdf(start).item(), G.icdf(end).item(), steps=grid_size)
-    # xs = G.icdf(torch.linspace(0.01, 0.99, steps=grid_size))
-    # ys = G.icdf(torch.linspace(0.01, 0.99, steps=grid_size))
-    x, y = torch.meshgrid(xs, ys, indexing="xy")
-    xy = torch.dstack((x, y))
-    pixel_probs = F.softmax(decoder(xy.view(-1, 2)), dim=1)
-    im_shape = pixel_probs.shape[2:]
-    pixel_probs = pixel_probs.view(*pixel_probs.shape[:2], -1).permute(0, 2, 1)
-    ims = []
-    for im_probs in pixel_probs:
-        k = torch.multinomial(im_probs, 1)
-        im = im_probs.gather(1, k)
-        # im = im_probs.argmax(1)
-        ims.append(im.view(*im_shape))
-    ims = torch.stack(ims, axis=0)[:, None, ...].float()
-    ims = 1.0 - ims
+    start, end = 0.5 / grid_size, (grid_size - 0.5) / grid_size
+    # NOTE this gives percentiles spaced by 1/grid_size in the original space,
+    # not in the latent one!
+    axis = G.icdf(torch.Tensor(np.linspace(start, end, num=grid_size)))
+    coords = torch.dstack(torch.meshgrid(axis, axis, indexing="ij"))
+    pixel_probs = F.softmax(decoder(coords.view(-1, 2)), dim=1)
+    batch_s, n_classes, w, h = pixel_probs.shape
+    pixel_probs = pixel_probs.permute(0, 2, 3, 1).reshape(-1, n_classes)
+    chosen_pixel_vals = torch.multinomial(pixel_probs, 1).view(batch_s, 1, w, h).float()
     img_grid = make_grid(
-        ims,
+        chosen_pixel_vals,
         nrow=grid_size,
         value_range=(0, 1),
         normalize=True,

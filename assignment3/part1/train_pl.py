@@ -329,3 +329,5 @@ if __name__ == "__main__":
 # model = VAE.load_from_checkpoint(
 #     "./VAE_logs/lightning_logs/version_10477841/checkpoints/epoch=73-step=31228.ckpt"
 # )
+# g = u.visualize_manifold(model.decoder)
+# u.show(g)
