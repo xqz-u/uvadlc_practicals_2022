@@ -250,6 +250,7 @@ class AdversarialAE(nn.Module):
         #######################
         return recon_x, z
 
+    # TODO gen_loss, does it come from slides 21-24 lecture 10?
     def get_loss_autoencoder(
         self, x: torch.Tensor, recon_x: torch.Tensor, z_fake: torch.Tensor, lambda_=1
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
@@ -272,10 +273,10 @@ class AdversarialAE(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        recon_loss = nn.MSELoss(x, recon_x)
-        gen_loss = ...
-        ae_loss = lambda_ * recon_loss + (1 - lambda_) * ()
-        logging_dict = {"gen_loss": None, "recon_loss": recon_loss, "ae_loss": ae_loss}
+        adv_loss, _ = self.get_loss_discriminator(z_fake)
+        recon_loss = F.mse_loss(recon_x, x)
+        ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * adv_loss
+        logging_dict = {"gen_loss": -1.0, "recon_loss": recon_loss, "ae_loss": ae_loss}
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -304,14 +305,25 @@ class AdversarialAE(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        disc_loss = None
+        batch_size = z_fake.size(0)
+        ones, zeros = torch.ones(batch_size, 1), torch.zeros(batch_size, 1)
+        z_real = torch.randn_like(z_fake)
+        disc_out = self.discriminator(torch.vstack([z_real, z_fake]))
+        disc_real, disc_fake = torch.split(disc_out, batch_size)
+        loss_real = F.binary_cross_entropy_with_logits(disc_real, ones)
+        # NOTE on slide 17, lecture 10, x is 1-disc_fake; why not here, rather,
+        # how is this already in discriminator(fake_input)? or do I have a
+        # wrong interpretation
+        loss_fake = F.binary_cross_entropy_with_logits(disc_fake, zeros)
+        disc_loss = 0.5 * (loss_real + loss_fake)
+        disc_preds = torch.where(disc_out < 0.0, 0.0, 1.0)
+        true_targets = torch.cat([ones, zeros])
         logging_dict = {
-            "disc_loss": None,
-            "loss_real": None,
-            "loss_fake": None,
-            "accuracy": None,
+            "disc_loss": disc_loss,
+            "loss_real": loss_real,
+            "loss_fake": loss_fake,
+            "accuracy": torch.mean((disc_preds == true_targets).float()),
         }
-        pass
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -321,7 +333,8 @@ class AdversarialAE(nn.Module):
     @torch.no_grad()
     def sample(self, batch_size):
         """
-        Function for sampling a new batch of random or conditioned images from the generator.
+        Function for sampling a new batch of random or conditioned
+        images from the generator.
         Inputs:
             batch_size - Number of images to generate
         Outputs:
