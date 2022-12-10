@@ -1,4 +1,4 @@
-################################################################################
+#################################################################################
 # MIT License
 #
 # Copyright (c) 2022
@@ -14,11 +14,7 @@
 # Date Created: 2022-11-25
 ################################################################################
 
-import os
 from collections import defaultdict
-
-import torch
-from torchvision.utils import save_image
 
 
 class TensorBoardLogger(object):

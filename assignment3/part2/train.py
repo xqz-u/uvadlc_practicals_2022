@@ -18,6 +18,7 @@ import argparse
 import datetime
 import json
 import os
+from pprint import pprint
 
 import pytorch_lightning as pl
 import torch
@@ -26,9 +27,67 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid, save_image
 from tqdm import tqdm, trange
 
+import utils as u
 from mnist import mnist
 from models import AdversarialAE
-from utils import *
+
+
+def cl_parser() -> argparse.Namespace:
+    # Training settings
+    parser = argparse.ArgumentParser(description="PyTorch MNIST Example")
+
+    # Model hyper-parameters
+    parser.add_argument(
+        "--z_dim", default=8, type=int, help="Dimensionality of latent code space"
+    )
+
+    # Optimizer hyper-parameters
+    parser.add_argument(
+        "--batch_size", default=64, type=int, help="Batch size to use for training"
+    )
+    parser.add_argument(
+        "--lambda_",
+        type=float,
+        default=0.995,
+        help="Reconstruction and adversarial mixing coefficient",
+    )
+    parser.add_argument(
+        "--ae_lr", type=float, default=1e-3, help="Autoencoder learning rate"
+    )
+    parser.add_argument(
+        "--d_lr", type=float, default=5e-3, help="Generator learning rate"
+    )
+
+    # Other hyper-parameters
+    parser.add_argument(
+        "--data_dir",
+        default="../data/",
+        type=str,
+        help="Directory where to look for the data. For jobs on Lisa, this should be $TMPDIR.",
+    )
+    parser.add_argument(
+        "--epochs", default=100, type=int, help="Number of epochs to train."
+    )
+    parser.add_argument(
+        "--seed", default=42, type=int, help="Seed to use for reproducing results"
+    )
+    parser.add_argument(
+        "--num_workers",
+        default=os.cpu_count(),
+        type=int,
+        help="Number of workers to use in the data loaders."
+        + "To have a truly deterministic run, this has to be 0.",
+    )
+    parser.add_argument(
+        "--log_dir",
+        default="AAE_logs/",
+        type=str,
+        help="Directory where the PyTorch Lightning logs " + "should be created.",
+    )
+    parser.add_argument(
+        "--no-cuda", action="store_true", default=False, help="disables CUDA training"
+    )
+    return parser.parse_args()
 
 
 def generate_and_save(model, epoch, summary_writer, batch_size=64):
@@ -144,7 +203,7 @@ def train_aae(
     )
 
 
-def main(args):
+def main(args: argparse.Namespace):
     """
     Main Function for the full training loop of a AAE model.
     Makes use of a separate train function for a single epoch.
@@ -163,15 +222,8 @@ def main(args):
         args.log_dir, datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     )
     checkpoint_dir = os.path.join(experiment_dir, "checkpoints")
-    results_dir = os.path.join(experiment_dir, "results")
-    sample_dir = os.path.join(results_dir, "Prior_samples")
-    recon_dir = os.path.join(results_dir, "Reconstruction")
-
-    os.makedirs(experiment_dir, exist_ok=True)
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    os.makedirs(results_dir, exist_ok=True)
-    os.makedirs(sample_dir, exist_ok=True)
-    os.makedirs(recon_dir, exist_ok=True)
+    for dir_ in ["checkpoints", "results", "Prior_samples", "Reconstruction"]:
+        os.makedirs(os.path.join(experiment_dir, dir_), exist_ok=True)
 
     with open(os.path.join(experiment_dir, "hparams.json"), "w") as f:
         json.dump(vars(args), f, indent=4)
@@ -203,8 +255,8 @@ def main(args):
     # TensorBoard logger
     # See utils.py for details on "TensorBoardLogger" class
     summary_writer = SummaryWriter(experiment_dir)
-    logger_ae = TensorBoardLogger(summary_writer, name="generator")
-    logger_disc = TensorBoardLogger(summary_writer, name="discriminator")
+    logger_ae = u.TensorBoardLogger(summary_writer, name="generator")
+    logger_disc = u.TensorBoardLogger(summary_writer, name="discriminator")
 
     # Initial generation before training
     generate_and_save(model, 0, summary_writer, args.batch_size)
@@ -238,60 +290,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    # Training settings
-    parser = argparse.ArgumentParser(description="PyTorch MNIST Example")
-
-    # Model hyper-parameters
-    parser.add_argument(
-        "--z_dim", default=8, type=int, help="Dimensionality of latent code space"
-    )
-
-    # Optimizer hyper-parameters
-    parser.add_argument(
-        "--batch_size", default=64, type=int, help="Batch size to use for training"
-    )
-    parser.add_argument(
-        "--lambda_",
-        type=float,
-        default=0.995,
-        help="Reconstruction and adversarial mixing coefficient",
-    )
-    parser.add_argument(
-        "--ae_lr", type=float, default=1e-3, help="Autoencoder learning rate"
-    )
-    parser.add_argument(
-        "--d_lr", type=float, default=5e-3, help="Generator learning rate"
-    )
-
-    # Other hyper-parameters
-    parser.add_argument(
-        "--data_dir",
-        default="../data/",
-        type=str,
-        help="Directory where to look for the data. For jobs on Lisa, this should be $TMPDIR.",
-    )
-    parser.add_argument(
-        "--epochs", default=100, type=int, help="Number of epochs to train."
-    )
-    parser.add_argument(
-        "--seed", default=42, type=int, help="Seed to use for reproducing results"
-    )
-    parser.add_argument(
-        "--num_workers",
-        default=4,
-        type=int,
-        help="Number of workers to use in the data loaders."
-        + "To have a truly deterministic run, this has to be 0.",
-    )
-    parser.add_argument(
-        "--log_dir",
-        default="AAE_logs/",
-        type=str,
-        help="Directory where the PyTorch Lightning logs " + "should be created.",
-    )
-    parser.add_argument(
-        "--no-cuda", action="store_true", default=False, help="disables CUDA training"
-    )
-
-    args = parser.parse_args()
+    args = cl_parser()
+    pprint(vars(args))
+    exit(0)
     main(args)
