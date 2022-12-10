@@ -15,14 +15,13 @@
 ################################################################################
 
 import os
-import torch
-
 from collections import defaultdict
+
+import torch
 from torchvision.utils import save_image
 
 
 class TensorBoardLogger(object):
-
     def __init__(self, summary_writer, avg_window=50, name=None):
         """
         Class that summarizes some logging code for TensorBoard.
@@ -64,12 +63,8 @@ class TensorBoardLogger(object):
             # Plot to TensorBoard every avg_window steps
             if self.steps[key] >= self.avg_window:
                 avg_val = self.value_dict[key] / self.steps[key]
-                self.summary_writer.add_scalar(self.name + key,
-                                               avg_val,
-                                               global_step=self.global_step)
+                self.summary_writer.add_scalar(
+                    self.name + key, avg_val, global_step=self.global_step
+                )
                 self.value_dict[key] = 0
                 self.steps[key] = 0
-
-
-
-
