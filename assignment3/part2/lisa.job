@@ -12,7 +12,7 @@
 
 ae_lambda=("" "--ae-only --lambda_ 1.0")
 i=$SLURM_ARRAY_TASK_ID
-ae_flag=${ae[i]}
+ae_flag=${ae_lambda[i]}
 
 module purge
 module load 2021

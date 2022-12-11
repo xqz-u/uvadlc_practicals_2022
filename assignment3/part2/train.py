@@ -92,7 +92,7 @@ def cl_parser() -> argparse.Namespace:
     parser.add_argument(
         "--ae-only",
         action="store_true",
-        default=True,
+        default=False,
         help="trains only the autoencoder and leaves the discriminator untouched",
     )
     return parser.parse_args()
@@ -167,7 +167,7 @@ def train_aae(
     logger_disc: u.TensorBoardLogger,
     optimizer_ae: optim.Optimizer,
     optimizer_disc: optim.Optimizer,
-    ae_only=True,
+    ae_only=False,
     lambda_=1.0,
 ):
     """

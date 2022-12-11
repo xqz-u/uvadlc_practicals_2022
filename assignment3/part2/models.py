@@ -324,9 +324,6 @@ class AdversarialAE(nn.Module):
         disc_out = self.discriminator(torch.vstack([z_real, z_fake]))
         disc_real, disc_fake = torch.split(disc_out, batch_size)
         loss_real = F.binary_cross_entropy_with_logits(disc_real, ones)
-        # NOTE on slide 17, lecture 10, x is 1-disc_fake; why not here, rather,
-        # how is this already in discriminator(fake_input)? or do I have a
-        # wrong interpretation
         loss_fake = F.binary_cross_entropy_with_logits(disc_fake, zeros)
         disc_loss = 0.5 * (loss_real + loss_fake)
         disc_preds = torch.where(disc_out <= 0.0, 0.0, 1.0)
