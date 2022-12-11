@@ -22,4 +22,5 @@ srun python -u $code_dir/train.py \
      --data_dir /scratch/$USER \
      --ae-only \
      --log_dir $code_dir/AAE_logs \
-     --ae_lr 1e-4
+     --ae_lr 1e-4 \
+     --num_workers 3 # suggested by PyTorch
