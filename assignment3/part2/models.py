@@ -251,7 +251,6 @@ class AdversarialAE(nn.Module):
         #######################
         return recon_x, z
 
-    # TODO gen_loss, does it come from slides 21-24 lecture 10?
     def get_loss_autoencoder(
         self, x: torch.Tensor, recon_x: torch.Tensor, z_fake: torch.Tensor, lambda_=1
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
@@ -274,14 +273,19 @@ class AdversarialAE(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        adv_loss, _ = self.get_loss_discriminator(z_fake)
+        # generator's loss -> 0 when discriminator thinks generator's outputs
+        # are actually real
+        disc_preds = self.discriminator(z_fake)
+        gen_loss = F.binary_cross_entropy_with_logits(
+            disc_preds, torch.ones_like(disc_preds, device=self.device)
+        )
         recon_loss = F.mse_loss(recon_x, x)
-        # NOTE not considering 1-lambda_ term as suggested on Piazza
+        # NOTE try not considering 1-lambda_ term as suggested on Piazza
         # https://piazza.com/class/l8vanaiu2bh1rg/post/217
-        ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * adv_loss
+        ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * gen_loss
         # ae_loss = lambda_ * recon_loss + adv_loss
         logging_dict = {
-            "gen_loss": torch.Tensor([-1.0]),
+            "gen_loss": gen_loss,
             "recon_loss": recon_loss,
             "ae_loss": ae_loss,
         }
