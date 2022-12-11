@@ -314,7 +314,8 @@ class AdversarialAE(nn.Module):
         #######################
         batch_size = z_fake.size(0)
         ones, zeros = torch.ones(batch_size, 1), torch.zeros(batch_size, 1)
-        z_real = torch.randn_like(z_fake)
+        ones, zeros = ones.to(self.device), zeros.to(self.device)
+        z_real = torch.randn_like(z_fake).to(self.device)
         disc_out = self.discriminator(torch.vstack([z_real, z_fake]))
         disc_real, disc_fake = torch.split(disc_out, batch_size)
         loss_real = F.binary_cross_entropy_with_logits(disc_real, ones)
