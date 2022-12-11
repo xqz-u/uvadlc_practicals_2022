@@ -203,6 +203,7 @@ def train_aae(
         recon_x, z = model(x)
         ae_loss, ae_loss_dict = model.get_loss_autoencoder(x, recon_x, z, lambda_)
         ae_loss.backward()
+        optimizer_ae.step()
         if batch_idx == 0:
             ae_acc = ae_loss_dict
         ae_acc = u.average_dicts(ae_acc, ae_loss_dict)
@@ -218,6 +219,7 @@ def train_aae(
             optimizer_disc.zero_grad()
             disc_loss, disc_loss_dict = model.get_loss_discriminator(z)
             disc_loss.backward()
+            optimizer_disc.step()
             if batch_idx == 0:
                 disc_acc = disc_loss_dict
             disc_acc = u.average_dicts(disc_acc, disc_loss_dict)
