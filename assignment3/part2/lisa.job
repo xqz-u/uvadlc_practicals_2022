@@ -10,7 +10,7 @@
 #SBATCH --output=/home/%u/job_logs/%x_%A_%a_%u.out
 #SBATCH --array=0-1
 
-ae_lambda=("" "--ae-only --lambda_ 1.0")
+ae_lambda=("--ae-only --lambda_ 1.0" "")
 i=$SLURM_ARRAY_TASK_ID
 ae_flag=${ae_lambda[i]}
 
