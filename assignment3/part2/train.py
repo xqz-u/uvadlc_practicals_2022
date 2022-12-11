@@ -16,6 +16,7 @@
 
 import argparse
 import datetime
+import itertools as it
 import json
 import os
 from pprint import pprint
@@ -23,6 +24,7 @@ from pprint import pprint
 import pytorch_lightning as pl
 import torch
 import torch.optim as optim
+from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid, save_image
 from tqdm import tqdm, trange
@@ -87,17 +89,26 @@ def cl_parser() -> argparse.Namespace:
     parser.add_argument(
         "--no-cuda", action="store_true", default=False, help="disables CUDA training"
     )
+    parser.add_argument(
+        "--ae-only",
+        action="store_true",
+        default=True,
+        help="trains only the autoencoder and leaves the discriminator untouched",
+    )
     return parser.parse_args()
 
 
-def generate_and_save(model, epoch, summary_writer, batch_size=64):
+def generate_and_save(
+    model: nn.Module, epoch: int, summary_writer: SummaryWriter, batch_size=64
+):
     """
     Function that generates and save samples from the AAE latent code.
     The generated samples images should be added to TensorBoard and,
     eventually saved inside the logging directory.
     Inputs:
         model - The AAE model that is currently being trained.
-        epoch - The epoch number to use for TensorBoard logging and saving of the files.
+        epoch - The epoch number to use for TensorBoard logging and
+                saving of the files.
         summary_writer - A TensorBoard summary writer to log the image samples.
         batch_size - Number of images to generate/sample
     """
@@ -149,37 +160,53 @@ def save_reconstruction(model, epoch, summary_writer, data):
 
 
 def train_aae(
-    epoch,
-    model,
-    train_loader,
-    logger_ae,
-    logger_disc,
-    optimizer_ae,
-    optimizer_disc,
-    lambda_=1,
+    epoch: int,
+    model: nn.Module,
+    train_loader: torch.utils.data.DataLoader,
+    logger_ae: u.TensorBoardLogger,
+    logger_disc: u.TensorBoardLogger,
+    optimizer_ae: optim.Optimizer,
+    optimizer_disc: optim.Optimizer,
+    ae_only=True,
+    lambda_=1.0,
 ):
     """
-    Function for training an Adversarial Autoencoder model on a dataset for a single epoch.
+    Function for training an Adversarial Autoencoder model on a
+    dataset for a single epoch.
     Inputs:
         epoch - Current epoch
         model - Adversarial Autoencoder model to train
         train_loader - Data Loader for the dataset you want to train on
-        optimizer_ae - The optimizer used to update the parameters of the generator
-        optimizer_disc - The optimizer used to update the parameters of the discriminator
-        lambda_ - the mixing coefficient for computing the combined loss in this way:
-                lambda * reconstruction loss + (1 - lambda) * adversarial loss
-                Note that lambda should be between 0 and 1
+        optimizer_ae - The optimizer used to update the parameters of
+                       the generator
+        optimizer_disc - The optimizer used to update the parameters
+                         of the discriminator
+        lambda_ - the mixing coefficient for computing the combined
+                  loss in this way:
+                  lambda * reconstruction loss + (1 - lambda) * adversarial loss
+                  Note that lambda should be between 0 and 1
     """
     assert 0 <= lambda_ <= 1, "Lambda should be between 0 and 1. "
     model.train()
     train_loss = 0
+
+    if ae_only:
+        disc_loss = torch.Tensor([0.0])
+
     for batch_idx, (x, _) in enumerate(train_loader):
         x = x.to(model.device)
         #######################
         # PUT YOUR CODE HERE  #
         #######################
         # Encoder-Decoder update
-        raise NotImplementedError
+        optimizer_ae.zero_grad()
+        recon_x, z = model(x)
+        ae_loss, ae_loss_dict = model.get_loss_autoencoder(x, recon_x, z, lambda_)
+        ae_loss.backward()
+        if batch_idx == 0:
+            ae_acc = ae_loss_dict
+        ae_acc = u.average_dicts(ae_acc, ae_loss_dict)
+        logger_ae.add_values(ae_loss_dict)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -188,14 +215,26 @@ def train_aae(
         # PUT YOUR CODE HERE  #
         #######################
         # Discriminator update
-        raise NotImplementedError
+        if not ae_only:
+            disc_loss, disc_loss_dict = model.get_loss_discriminator(z)
+            disc_loss.backward()
+            if batch_idx == 0:
+                disc_acc = disc_loss_dict
+            disc_acc = u.average_dicts(disc_acc, disc_loss_dict)
         #######################
         # END OF YOUR CODE    #
         #######################
         train_loss += disc_loss.item() + ae_loss.item()
 
+        # saves the reconstruction of the first batch on epochs 0, 1,
+        # then every 5 epochs
         if (epoch <= 1 or epoch % 5 == 0) and batch_idx == 0:
             save_reconstruction(model, epoch, logger_ae.summary_writer, x)
+
+    logger_ae.add_values(ae_acc)
+    if not ae_only:
+        logger_disc.add_values(disc_acc)
+
     print(
         "====> Epoch {} : Average loss: {:.4f}".format(
             epoch, train_loss / len(train_loader)
@@ -222,11 +261,15 @@ def main(args: argparse.Namespace):
         args.log_dir, datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     )
     checkpoint_dir = os.path.join(experiment_dir, "checkpoints")
-    for dir_ in ["checkpoints", "results", "Prior_samples", "Reconstruction"]:
-        os.makedirs(os.path.join(experiment_dir, dir_), exist_ok=True)
+    results_dir = os.path.join(experiment_dir, "results")
+    sample_dir = os.path.join(results_dir, "Prior_samples")
+    recon_dir = os.path.join(results_dir, "Reconstruction")
 
-    with open(os.path.join(experiment_dir, "hparams.json"), "w") as f:
-        json.dump(vars(args), f, indent=4)
+    os.makedirs(experiment_dir, exist_ok=True)
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    os.makedirs(results_dir, exist_ok=True)
+    os.makedirs(sample_dir, exist_ok=True)
+    os.makedirs(recon_dir, exist_ok=True)
 
     train_loader = mnist(
         root=args.data_dir, batch_size=args.batch_size, num_workers=args.num_workers
@@ -244,13 +287,19 @@ def main(args: argparse.Namespace):
     # PUT YOUR CODE HERE  #
     #######################
     # You can use the Adam optimizer for autoencoder and SGD for discriminator.
-    # It is recommended to reduce the momentum (beta1) to e.g. 0.5 for Adam optimizer.
-    optimizer_ae = None
-    optimizer_disc = None
-    raise NotImplementedError
+    # It is recommended to reduce the momentum (beta1) to e.g. 0.5 for
+    # Adam optimizer.
+    modules = model.children()
+    aae_params = it.chain(next(modules).parameters(), next(modules).parameters())
+    betas = (0.5, 0.999)
+    optimizer_ae = optim.Adam(aae_params, lr=args.ae_lr, betas=betas)
+    optimizer_disc = optim.SGD(next(modules).parameters(), args.d_lr)
     #######################
     # END OF YOUR CODE    #
     #######################
+
+    with open(os.path.join(experiment_dir, "hparams.json"), "w") as f:
+        json.dump({**vars(args), "betas": betas}, f, indent=4)
 
     # TensorBoard logger
     # See utils.py for details on "TensorBoardLogger" class
@@ -273,10 +322,11 @@ def main(args: argparse.Namespace):
             logger_disc,
             optimizer_ae,
             optimizer_disc,
+            ae_only=args.ae_only,
             lambda_=args.lambda_,
         )
 
-        # Logging images
+        # Logging images every 5 epochs
         if epoch == 0 or (epoch + 1) % 5 == 0:
             generate_and_save(model, epoch + 1, summary_writer)
 
@@ -292,5 +342,20 @@ def main(args: argparse.Namespace):
 if __name__ == "__main__":
     args = cl_parser()
     pprint(vars(args))
-    exit(0)
     main(args)
+
+kwargs = {
+    "ae_lr": 0.001,
+    "ae_only": True,
+    "batch_size": 64,
+    "d_lr": 0.005,
+    "data_dir": "../data/",
+    "epochs": 100,
+    "lambda_": 0.995,
+    "log_dir": "AAE_logs/",
+    "no_cuda": False,
+    "num_workers": 8,
+    "seed": 42,
+    "z_dim": 8,
+}
+args = argparse.Namespace(**kwargs)

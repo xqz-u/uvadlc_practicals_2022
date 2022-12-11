@@ -232,7 +232,7 @@ class AdversarialAE(nn.Module):
         self.decoder = ConvDecoder(z_dim)
         self.discriminator = Discriminator(z_dim)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, ...]:
         """
         Inputs:
             x - Batch of input images. Shape: [B,C,H,W]
@@ -275,8 +275,15 @@ class AdversarialAE(nn.Module):
         #######################
         adv_loss, _ = self.get_loss_discriminator(z_fake)
         recon_loss = F.mse_loss(recon_x, x)
-        ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * adv_loss
-        logging_dict = {"gen_loss": -1.0, "recon_loss": recon_loss, "ae_loss": ae_loss}
+        # NOTE not considering 1-lambda_ term as suggested on Piazza
+        # https://piazza.com/class/l8vanaiu2bh1rg/post/217
+        # ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * adv_loss
+        ae_loss = lambda_ * recon_loss + adv_loss
+        logging_dict = {
+            "gen_loss": torch.Tensor([-1.0]),
+            "recon_loss": recon_loss,
+            "ae_loss": ae_loss,
+        }
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -331,7 +338,7 @@ class AdversarialAE(nn.Module):
         return disc_loss, logging_dict
 
     @torch.no_grad()
-    def sample(self, batch_size):
+    def sample(self, batch_size: int) -> torch.Tensor:
         """
         Function for sampling a new batch of random or conditioned
         images from the generator.
@@ -343,8 +350,8 @@ class AdversarialAE(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        x = None
-        pass
+        z = torch.randn((batch_size, self.z_dim)).to(self.device)
+        x = self.decoder(z)
         #######################
         # END OF YOUR CODE    #
         #######################
