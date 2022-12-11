@@ -19,6 +19,9 @@ source activate dl2022
 # args to train vanilla AE:
 # --ae-only
 
+# useful args:
+# --log_dir $code_dir/AAE_logs
+
 # Run your code
 code_dir="$HOME/uvadlc_practicals_2022/assignment3/part2"
 srun python -u $code_dir/train.py --data_dir /scratch/$USER "$@"

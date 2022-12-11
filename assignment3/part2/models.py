@@ -22,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+# NOTE tutorial 9 uses GELU activation, I am using ReLU at the moment
 class ConvEncoder(nn.Module):
     def __init__(self, z_dim: int):
         """
@@ -277,8 +278,8 @@ class AdversarialAE(nn.Module):
         recon_loss = F.mse_loss(recon_x, x)
         # NOTE not considering 1-lambda_ term as suggested on Piazza
         # https://piazza.com/class/l8vanaiu2bh1rg/post/217
-        # ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * adv_loss
-        ae_loss = lambda_ * recon_loss + adv_loss
+        ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * adv_loss
+        # ae_loss = lambda_ * recon_loss + adv_loss
         logging_dict = {
             "gen_loss": torch.Tensor([-1.0]),
             "recon_loss": recon_loss,
@@ -313,9 +314,9 @@ class AdversarialAE(nn.Module):
         # PUT YOUR CODE HERE  #
         #######################
         batch_size = z_fake.size(0)
-        ones, zeros = torch.ones(batch_size, 1), torch.zeros(batch_size, 1)
-        ones, zeros = ones.to(self.device), zeros.to(self.device)
-        z_real = torch.randn_like(z_fake).to(self.device)
+        ones = torch.ones(batch_size, 1, device=self.device)
+        zeros = torch.zeros(batch_size, 1, device=self.device)
+        z_real = torch.randn_like(z_fake, device=self.device)
         disc_out = self.discriminator(torch.vstack([z_real, z_fake]))
         disc_real, disc_fake = torch.split(disc_out, batch_size)
         loss_real = F.binary_cross_entropy_with_logits(disc_real, ones)
@@ -324,7 +325,7 @@ class AdversarialAE(nn.Module):
         # wrong interpretation
         loss_fake = F.binary_cross_entropy_with_logits(disc_fake, zeros)
         disc_loss = 0.5 * (loss_real + loss_fake)
-        disc_preds = torch.where(disc_out < 0.0, 0.0, 1.0)
+        disc_preds = torch.where(disc_out <= 0.0, 0.0, 1.0)
         true_targets = torch.cat([ones, zeros])
         logging_dict = {
             "disc_loss": disc_loss,
@@ -351,7 +352,7 @@ class AdversarialAE(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        z = torch.randn((batch_size, self.z_dim)).to(self.device)
+        z = torch.randn((batch_size, self.z_dim), device=self.device)
         x = self.decoder(z)
         #######################
         # END OF YOUR CODE    #

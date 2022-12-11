@@ -206,7 +206,6 @@ def train_aae(
         if batch_idx == 0:
             ae_acc = ae_loss_dict
         ae_acc = u.average_dicts(ae_acc, ae_loss_dict)
-        logger_ae.add_values(ae_loss_dict)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -216,6 +215,7 @@ def train_aae(
         #######################
         # Discriminator update
         if not ae_only:
+            optimizer_disc.zero_grad()
             disc_loss, disc_loss_dict = model.get_loss_discriminator(z)
             disc_loss.backward()
             if batch_idx == 0:
