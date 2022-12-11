@@ -204,9 +204,6 @@ def train_aae(
         ae_loss, ae_loss_dict = model.get_loss_autoencoder(x, recon_x, z, lambda_)
         ae_loss.backward()
         optimizer_ae.step()
-        if batch_idx == 0:
-            ae_acc = ae_loss_dict
-        ae_acc = u.average_dicts(ae_acc, ae_loss_dict)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -217,12 +214,9 @@ def train_aae(
         # Discriminator update
         if not ae_only:
             optimizer_disc.zero_grad()
-            disc_loss, disc_loss_dict = model.get_loss_discriminator(z)
+            disc_loss, disc_loss_dict = model.get_loss_discriminator(z.detach())
             disc_loss.backward()
             optimizer_disc.step()
-            if batch_idx == 0:
-                disc_acc = disc_loss_dict
-            disc_acc = u.average_dicts(disc_acc, disc_loss_dict)
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -233,9 +227,9 @@ def train_aae(
         if (epoch <= 1 or epoch % 5 == 0) and batch_idx == 0:
             save_reconstruction(model, epoch, logger_ae.summary_writer, x)
 
-    logger_ae.add_values(ae_acc)
+    logger_ae.add_values(ae_loss_dict)
     if not ae_only:
-        logger_disc.add_values(disc_acc)
+        logger_disc.add_values(disc_loss_dict)
 
     print(
         "====> Epoch {} : Average loss: {:.4f}".format(
@@ -306,8 +300,10 @@ def main(args: argparse.Namespace):
     # TensorBoard logger
     # See utils.py for details on "TensorBoardLogger" class
     summary_writer = SummaryWriter(experiment_dir)
-    logger_ae = u.TensorBoardLogger(summary_writer, name="generator")
-    logger_disc = u.TensorBoardLogger(summary_writer, name="discriminator")
+    logger_ae = u.TensorBoardLogger(summary_writer, name="generator", avg_window=10)
+    logger_disc = u.TensorBoardLogger(
+        summary_writer, name="discriminator", avg_window=10
+    )
 
     # Initial generation before training
     generate_and_save(model, 0, summary_writer, args.batch_size)
@@ -348,7 +344,8 @@ if __name__ == "__main__":
 
 kwargs = {
     "ae_lr": 0.001,
-    "ae_only": True,
+    # "ae_only": True,
+    "ae_only": False,
     "batch_size": 64,
     "d_lr": 0.005,
     "data_dir": "../data/",

@@ -72,14 +72,3 @@ class TensorBoardLogger:
                 )
                 self.value_dict[key] = 0
                 self.steps[key] = 0
-
-
-def average_dicts(
-    acc: Dict[str, torch.Tensor], new: Dict[str, torch.Tensor]
-) -> Dict[str, torch.Tensor]:
-    return dict(
-        zip(
-            acc.keys(),
-            [torch.Tensor(nums).mean() for nums in zip(acc.values(), new.values())],
-        )
-    )
