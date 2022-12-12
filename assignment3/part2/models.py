@@ -72,7 +72,6 @@ class ConvEncoder(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        x = x.float() / 15 * 2.0 - 1.0  # Move images between -1 and 1
         z = self.net(x)
         #######################
         # END OF YOUR CODE    #
