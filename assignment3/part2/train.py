@@ -89,12 +89,6 @@ def cl_parser() -> argparse.Namespace:
     parser.add_argument(
         "--no-cuda", action="store_true", default=False, help="disables CUDA training"
     )
-    parser.add_argument(
-        "--ae-only",
-        action="store_true",
-        default=False,
-        help="trains only the autoencoder and leaves the discriminator untouched",
-    )
     return parser.parse_args()
 
 
@@ -168,7 +162,6 @@ def train_aae(
     logger_disc: u.TensorBoardLogger,
     optimizer_ae: optim.Optimizer,
     optimizer_disc: optim.Optimizer,
-    ae_only=False,
     lambda_=1.0,
 ):
     """
@@ -188,11 +181,9 @@ def train_aae(
                   Note that lambda should be between 0 and 1
     """
     assert 0 <= lambda_ <= 1, "Lambda should be between 0 and 1. "
+
     model.train()
     train_loss = 0
-
-    if ae_only:
-        disc_loss = torch.Tensor([0.0])
 
     for batch_idx, (x, _) in enumerate(train_loader):
         x = x.to(model.device)
@@ -213,12 +204,11 @@ def train_aae(
         # PUT YOUR CODE HERE  #
         #######################
         # Discriminator update
-        if not ae_only:
-            optimizer_disc.zero_grad()
-            # the discriminator does not need d/dz, only d/dD(z)
-            disc_loss, disc_loss_dict = model.get_loss_discriminator(z.detach())
-            disc_loss.backward()
-            optimizer_disc.step()
+        optimizer_disc.zero_grad()
+        # the discriminator does not need d/dz, only d/dD(z)
+        disc_loss, disc_loss_dict = model.get_loss_discriminator(z.detach())
+        disc_loss.backward()
+        optimizer_disc.step()
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -230,8 +220,7 @@ def train_aae(
             save_reconstruction(model, epoch, logger_ae.summary_writer, x)
 
     logger_ae.add_values(ae_loss_dict)
-    if not ae_only:
-        logger_disc.add_values(disc_loss_dict)
+    logger_disc.add_values(disc_loss_dict)
 
     print(
         "====> Epoch {} : Average loss: {:.4f}".format(
@@ -280,10 +269,10 @@ def main(args: argparse.Namespace):
     model = AdversarialAE(z_dim=args.z_dim)
     model = model.to(device)
 
-    # Create two separate optimizers for generator and discriminator
     #######################
     # PUT YOUR CODE HERE  #
     #######################
+    # Create two separate optimizers for generator and discriminator
     # You can use the Adam optimizer for autoencoder and SGD for discriminator.
     # It is recommended to reduce the momentum (beta1) to e.g. 0.5 for
     # Adam optimizer.
@@ -322,7 +311,6 @@ def main(args: argparse.Namespace):
             logger_disc,
             optimizer_ae,
             optimizer_disc,
-            ae_only=args.ae_only,
             lambda_=args.lambda_,
         )
 
@@ -347,7 +335,7 @@ if __name__ == "__main__":
 kwargs = {
     "ae_lr": 0.001,
     # "ae_only": True,
-    "ae_only": False,
+    # "ae_only": False,
     "batch_size": 64,
     "d_lr": 0.005,
     "data_dir": "../data/",
