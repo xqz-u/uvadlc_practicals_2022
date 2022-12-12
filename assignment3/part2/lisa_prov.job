@@ -5,14 +5,14 @@
 #SBATCH --job-name=TrainAAE
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=3
-#SBATCH --time=01:30:00
-#SBATCH --mem=20G
+#SBATCH --time=00:30:00
+#SBATCH --mem=12G
 #SBATCH --output=/home/%u/job_logs/%x_%A_%a_%u.out
-#SBATCH --array=0-3
+#SBATCH --array=0,2
 
 z_dims=(8 2)
-ae_lambda=("--ae-only --lambda_ 1.0" "")
-logs_dirs=("AE_logs" "AAE_logs")
+ae_lambda=("--ae-only --lambda_ 1.0")
+logs_dirs=("AE_logs")
 
 i=$SLURM_ARRAY_TASK_ID
 

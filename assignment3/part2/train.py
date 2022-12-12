@@ -226,7 +226,7 @@ def train_aae(
 
         # saves the reconstruction of the first batch on epochs 0, 1,
         # then every 5 epochs
-        if (epoch <= 1 or epoch % 5 == 0) and batch_idx == 0:
+        if (epoch <= 1 or (epoch + 1) % 5 == 0 or epoch == 99) and batch_idx == 0:
             save_reconstruction(model, epoch, logger_ae.summary_writer, x)
 
     logger_ae.add_values(ae_loss_dict)
