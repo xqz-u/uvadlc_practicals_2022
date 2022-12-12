@@ -215,6 +215,7 @@ def train_aae(
         # Discriminator update
         if not ae_only:
             optimizer_disc.zero_grad()
+            # the discriminator does not need d/dz, only d/dD(z)
             disc_loss, disc_loss_dict = model.get_loss_discriminator(z.detach())
             disc_loss.backward()
             optimizer_disc.step()
