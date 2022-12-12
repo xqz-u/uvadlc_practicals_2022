@@ -5,7 +5,7 @@
 #SBATCH --job-name=TrainAAE
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=3
-#SBATCH --time=01:00:00
+#SBATCH --time=01:30:00
 #SBATCH --mem=20G
 #SBATCH --output=/home/%u/job_logs/%x_%A_%a_%u.out
 #SBATCH --array=0-3
@@ -29,7 +29,7 @@ source activate dl2022
 
 # Run your code
 code_dir="$HOME/uvadlc_practicals_2022/assignment3/part2"
-srun python -u "$code_dir/train.py" \
+time srun python -u "$code_dir/train.py" \
      --data_dir "scratch/$USER/" \
      --log_dir "$code_dir/$logs_dir_$z_dim" \
      --ae_lr 1e-4 \
