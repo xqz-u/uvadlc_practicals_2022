@@ -103,6 +103,14 @@ def elbo_to_bpd(elbo: torch.Tensor, img_shape: tuple) -> torch.Tensor:
     return bpd
 
 
+def image_from_multinomial(pixels: torch.Tensor) -> torch.Tensor:
+    batch_s, n_classes, w, h = pixels.shape
+    pixel_probs = F.softmax(pixels, dim=1)
+    pixel_probs = pixel_probs.permute(0, 2, 3, 1).reshape(-1, n_classes)
+    chosen_pixel_vals = torch.multinomial(pixel_probs, 1).view(batch_s, 1, w, h).float()
+    return chosen_pixel_vals
+
+
 @torch.no_grad()
 def visualize_manifold(decoder, grid_size=20):
     """
@@ -132,13 +140,10 @@ def visualize_manifold(decoder, grid_size=20):
     G = torch.distributions.Normal(0, 1)
     start, end = 0.5 / grid_size, (grid_size - 0.5) / grid_size
     # NOTE this gives percentiles spaced by 1/grid_size in the original space,
-    # not in the latent one!
+    # not in the latent one
     axis = G.icdf(torch.Tensor(np.linspace(start, end, num=grid_size)))
     coords = torch.dstack(torch.meshgrid(axis, axis, indexing="ij"))
-    pixel_probs = F.softmax(decoder(coords.view(-1, 2)), dim=1)
-    batch_s, n_classes, w, h = pixel_probs.shape
-    pixel_probs = pixel_probs.permute(0, 2, 3, 1).reshape(-1, n_classes)
-    chosen_pixel_vals = torch.multinomial(pixel_probs, 1).view(batch_s, 1, w, h).float()
+    chosen_pixel_vals = image_from_multinomial(decoder(coords.view(-1, 2)))
     img_grid = make_grid(
         chosen_pixel_vals,
         nrow=grid_size,

@@ -155,9 +155,13 @@ class VAE(pl.LightningModule):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
+        device = self.decoder.device
         shape = (batch_size, self.encoder.z_dim)
-        z = u.sample_reparameterize(torch.zeros(shape), torch.ones(shape))
-        x_samples = self.decoder(z.to(self.decoder.device)).argmax(1, keepdim=True)
+        z = u.sample_reparameterize(
+            torch.zeros(shape, device=device), torch.ones(shape, device=device)
+        )
+        x_samples = u.image_from_multinomial(self.decoder(z))
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -311,20 +315,20 @@ if __name__ == "__main__":
     train_vae(args)
 
 
-# kwargs = {
-#     # "batch_size": 128,
-#     "batch_size": 4,
-#     "data_dir": "./data",
-#     "epochs": 80,
-#     "log_dir": "VAE_logs",
-#     "lr": 0.001,
-#     "num_filters": 32,
-#     "num_workers": 4,
-#     "progress_bar": False,
-#     "seed": 42,
-#     "z_dim": 20,
-# }
-# args = argparse.Namespace(**kwargs)
+kwargs = {
+    # "batch_size": 128,
+    "batch_size": 4,
+    "data_dir": "./data",
+    "epochs": 80,
+    "log_dir": "VAE_logs",
+    "lr": 0.001,
+    "num_filters": 32,
+    "num_workers": 4,
+    "progress_bar": False,
+    "seed": 42,
+    "z_dim": 20,
+}
+args = argparse.Namespace(**kwargs)
 # model = VAE.load_from_checkpoint(
 #     "./VAE_logs/lightning_logs/version_10477841/checkpoints/epoch=73-step=31228.ckpt"
 # )
