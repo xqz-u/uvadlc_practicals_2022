@@ -216,7 +216,7 @@ def train_aae(
 
         # saves the reconstruction of the first batch on epochs 0, 1,
         # then every 5 epochs
-        if (epoch <= 1 or (epoch + 1) % 5 == 0 or epoch == 99) and batch_idx == 0:
+        if (epoch <= 1 or epoch % 5 == 0 or epoch == 99) and batch_idx == 0:
             save_reconstruction(model, epoch, logger_ae.summary_writer, x)
 
     logger_ae.add_values(ae_loss_dict)
@@ -332,19 +332,19 @@ if __name__ == "__main__":
     pprint(vars(args))
     main(args)
 
-kwargs = {
-    "ae_lr": 0.001,
-    # "ae_only": True,
-    # "ae_only": False,
-    "batch_size": 64,
-    "d_lr": 0.005,
-    "data_dir": "../data/",
-    "epochs": 100,
-    "lambda_": 0.995,
-    "log_dir": "AAE_logs/",
-    "no_cuda": False,
-    "num_workers": 8,
-    "seed": 42,
-    "z_dim": 8,
-}
-args = argparse.Namespace(**kwargs)
+# kwargs = {
+#     "ae_lr": 1e-4,
+#     # "ae_only": True,
+#     # "ae_only": False,
+#     "batch_size": 64,
+#     "d_lr": 0.005,
+#     "data_dir": "../data/",
+#     "epochs": 10,
+#     "lambda_": 0.995,
+#     "log_dir": "AAE_logs/",
+#     "no_cuda": False,
+#     "num_workers": 8,
+#     "seed": 42,
+#     "z_dim": 8,
+# }
+# args = argparse.Namespace(**kwargs)
