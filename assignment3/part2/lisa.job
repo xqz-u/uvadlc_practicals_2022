@@ -12,7 +12,7 @@
 
 ae_lambda=("--ae-only --lambda_ 1.0" "")
 logs_dirs=("AE_logs" "AAE_logs")
-z_dims=$(8 2)
+z_dims=(8 2)
 
 i=$SLURM_ARRAY_TASK_ID
 
