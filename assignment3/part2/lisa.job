@@ -6,13 +6,19 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=3
 #SBATCH --time=01:00:00
-#SBATCH --mem=32000M
+#SBATCH --mem=20G
 #SBATCH --output=/home/%u/job_logs/%x_%A_%a_%u.out
-#SBATCH --array=0-1
+#SBATCH --array=0-3
 
 ae_lambda=("--ae-only --lambda_ 1.0" "")
+logs_dirs=("AE_logs" "AAE_logs")
+z_dims=$(8 2)
+
 i=$SLURM_ARRAY_TASK_ID
+
 ae_flag=${ae_lambda[i]}
+logs_dir=${logs_dirs[i]}
+z_dim=${z_dims[i]}
 
 module purge
 module load 2021
@@ -23,9 +29,10 @@ source activate dl2022
 
 # Run your code
 code_dir="$HOME/uvadlc_practicals_2022/assignment3/part2"
-srun python -u $code_dir/train.py \
-     --data_dir /scratch/$USER \
-     --log_dir $code_dir/AAE_logs \
+srun python -u "$code_dir/train.py" \
+     --data_dir "scratch/$USER/" \
+     --log_dir "$code_dir/$logs_dir_$z_dim" \
      --ae_lr 1e-4 \
      --num_workers 3 \
+     --z_dim $z_dim \
      $ae_flag

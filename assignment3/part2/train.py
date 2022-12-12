@@ -132,11 +132,12 @@ def generate_and_save(
 def save_reconstruction(model, epoch, summary_writer, data):
     """
     Function that reconstructs a batch of data from the AAE.
-    The reconstructed images alongside their actual image should be added to TensorBoard and,
-    eventually saved inside the logging directory.
+    The reconstructed images alongside their actual image should be
+    added to TensorBoard and, eventually saved inside the logging directory.
     Inputs:
         model - The AAE model that is currently being trained.
-        epoch - The epoch number to use for TensorBoard logging and saving of the files.
+        epoch - The epoch number to use for TensorBoard logging and
+                saving of the files.
         summary_writer - A TensorBoard summary writer to log the image samples.
         data - Batch of images to reconstruct
     """
