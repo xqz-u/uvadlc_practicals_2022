@@ -14,10 +14,8 @@
 # Date Created: 2022-11-25
 ################################################################################
 
-import torch
-from torchvision import transforms
-from torchvision import datasets
 from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 
 
 def mnist(root="../data", batch_size=64, num_workers=4, download=True):
@@ -33,15 +31,19 @@ def mnist(root="../data", batch_size=64, num_workers=4, download=True):
                    root directory.
     """
 
-    data_transforms = transforms.Compose([transforms.ToTensor(),
-                                          transforms.Normalize((0.5,), (0.5,))])
-    train_dataset = datasets.MNIST(root, train=True, download=download,
-                                   transform=data_transforms)
+    data_transforms = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))]
+    )
+    train_dataset = datasets.MNIST(
+        root, train=True, download=download, transform=data_transforms
+    )
 
-    train_loader = DataLoader(train_dataset,
-                              batch_size=batch_size,
-                              shuffle=True,
-                              num_workers=num_workers,
-                              pin_memory=True)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
 
     return train_loader

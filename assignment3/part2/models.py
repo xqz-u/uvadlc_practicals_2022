@@ -280,12 +280,7 @@ class AdversarialAE(nn.Module):
             disc_preds, torch.ones_like(disc_preds, device=self.device)
         )
         recon_loss = F.mse_loss(recon_x, x)
-        # NOTE try not considering 1-lambda_ term as suggested on Piazza
-        # https://piazza.com/class/l8vanaiu2bh1rg/post/217
-        # ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * gen_loss
-        ae_loss = lambda_ * recon_loss
-        if lambda_ < 1.0:
-            ae_loss += gen_loss
+        ae_loss = lambda_ * recon_loss + (1.0 - lambda_) * gen_loss
         logging_dict = {
             "gen_loss": gen_loss,
             "recon_loss": recon_loss,
