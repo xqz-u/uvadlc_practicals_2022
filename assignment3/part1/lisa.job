@@ -20,4 +20,5 @@ source activate dl2022
 code_dir="$HOME/uvadlc_practicals_2022/assignment3/part1"
 time srun python -u $code_dir/train_pl.py \
      --data_dir /scratch/$USER \
+     --log_dir $code_dir/VAE_logs \
      --num_workers 3
