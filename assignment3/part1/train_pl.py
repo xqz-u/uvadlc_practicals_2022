@@ -316,9 +316,8 @@ if __name__ == "__main__":
 
 
 # kwargs = {
-#     # "batch_size": 128,
-#     "batch_size": 4,
-#     "data_dir": "./data",
+#     "batch_size": 128,
+#     "data_dir": "../data",
 #     "epochs": 80,
 #     "log_dir": "VAE_logs",
 #     "lr": 0.001,
