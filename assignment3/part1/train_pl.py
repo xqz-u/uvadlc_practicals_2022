@@ -315,20 +315,20 @@ if __name__ == "__main__":
     train_vae(args)
 
 
-kwargs = {
-    # "batch_size": 128,
-    "batch_size": 4,
-    "data_dir": "./data",
-    "epochs": 80,
-    "log_dir": "VAE_logs",
-    "lr": 0.001,
-    "num_filters": 32,
-    "num_workers": 4,
-    "progress_bar": False,
-    "seed": 42,
-    "z_dim": 20,
-}
-args = argparse.Namespace(**kwargs)
+# kwargs = {
+#     # "batch_size": 128,
+#     "batch_size": 4,
+#     "data_dir": "./data",
+#     "epochs": 80,
+#     "log_dir": "VAE_logs",
+#     "lr": 0.001,
+#     "num_filters": 32,
+#     "num_workers": 4,
+#     "progress_bar": False,
+#     "seed": 42,
+#     "z_dim": 20,
+# }
+# args = argparse.Namespace(**kwargs)
 # model = VAE.load_from_checkpoint(
 #     "./VAE_logs/lightning_logs/version_10477841/checkpoints/epoch=73-step=31228.ckpt"
 # )

@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=3
 #SBATCH --time=02:00:00
-#SBATCH --mem=32000M
+#SBATCH --mem=12G
 #SBATCH --output=/home/%u/job_logs/%x_%A_%u.out
 
 module purge
@@ -18,4 +18,6 @@ source activate dl2022
 
 # Run your code
 code_dir="$HOME/uvadlc_practicals_2022/assignment3/part1"
-srun python -u $code_dir/train_pl.py --data_dir $TMPDIR/ "$@"
+time srun python -u $code_dir/train_pl.py \
+     --data_dir /scratch/$USER \
+     --num_workers 3
