@@ -40,7 +40,7 @@ class ConvEncoder(nn.Module):
         # PUT YOUR CODE HERE  #
         #######################
         act_fn = nn.ReLU
-        c_hid = 16
+        c_hid = 32
         self.net = nn.Sequential(
             # 32x32 => 16x16
             nn.Conv2d(1, c_hid, kernel_size=3, padding=1, stride=2),
@@ -105,7 +105,7 @@ class ConvDecoder(nn.Module):
         # PUT YOUR CODE HERE  #
         #######################
         act_fn = nn.ReLU
-        c_hid = 16
+        c_hid = 32
         self.linear = nn.Sequential(nn.Linear(z_dim, 2 * 16 * c_hid), act_fn())
         self.net = nn.Sequential(
             # 4x4 => 7x7
